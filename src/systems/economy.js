@@ -1,11 +1,32 @@
 import { CONFIG } from '../data/config.js';
-import { MACHINES, MACHINE_BY_ID } from '../data/machines.js';
+import { MACHINES, MACHINE_BY_ID, PREV_IN_WING } from '../data/machines.js';
+import { PRESTIGE, UPGRADES_BY_ID } from '../data/prestige.js';
 
 const growth = (def) => def.costGrowth ?? CONFIG.costGrowth;
 
-/** Hook for Part 4 (prestige) and Part 6 (boosts). Everything multiplies through here. */
-export function getGlobalMultiplier(/* state */) {
-  return 1;
+export function upgradeLevel(state, id) {
+  return (state.prestige && state.prestige.upgrades[id]) || 0;
+}
+
+/** Everything that multiplies income: hired managers + Golden Thimble. */
+export function getGlobalMultiplier(state) {
+  const managers = 1 + PRESTIGE.bonusPerPoint * state.prestige.totalPoints;
+  const thimble = 1 + UPGRADES_BY_ID.thimble.perLevel * upgradeLevel(state, 'thimble');
+  return managers * thimble;
+}
+
+/** Speedy Spools: machines finish cycles faster. */
+export function speedMultiplier(state) {
+  return 1 + UPGRADES_BY_ID.spools.perLevel * upgradeLevel(state, 'spools');
+}
+
+export function cycleTimeOf(def, state) {
+  return def.cycleTime / (state ? speedMultiplier(state) : 1);
+}
+
+/** Seconds of offline work that count (Night Shift extends it). */
+export function offlineCapSeconds(state) {
+  return CONFIG.offlineCapSeconds + UPGRADES_BY_ID.nightshift.perLevel * upgradeLevel(state, 'nightshift');
 }
 
 export function milestoneMultiplier(level) {
@@ -49,28 +70,26 @@ export function maxAffordable(def, owned, coins) {
   return n;
 }
 
-function indexOfMachine(id) {
-  return MACHINES.findIndex((m) => m.id === id);
-}
-
-/** A machine can be bought once the previous machine is owned. */
+/** A machine can be bought once its wing is open and the previous machine in the wing is owned. */
 export function isUnlocked(state, id) {
-  const i = indexOfMachine(id);
-  if (i < 0) return false;
-  if (i === 0) return true;
-  return state.machines[MACHINES[i - 1].id].level >= 1;
+  const def = MACHINE_BY_ID[id];
+  if (!def || !state.wings[def.wing]) return false;
+  const prev = PREV_IN_WING[id];
+  return !prev || state.machines[prev.id].level >= 1;
 }
 
 /** Shown in the list: unlocked machines plus one locked teaser. */
 export function isVisible(state, id) {
-  const i = indexOfMachine(id);
-  if (i <= 0) return i === 0;
-  return isUnlocked(state, id) || isUnlocked(state, MACHINES[i - 1].id);
+  const def = MACHINE_BY_ID[id];
+  if (!def || !state.wings[def.wing]) return false;
+  const prev = PREV_IN_WING[id];
+  return !prev || isUnlocked(state, prev.id);
 }
 
 export function addCoins(state, amount) {
   state.coins += amount;
   state.lifetimeCoins += amount;
+  state.runCoins += amount;
 }
 
 /** How many levels a buy of this mode would purchase (0 = cannot afford). */
@@ -93,6 +112,16 @@ export function buyMachine(state, id, mode = 1) {
   return { bought: count, spent };
 }
 
+/** Part 3: pay once and the machine restarts its own cycles forever. */
+export function buyAuto(state, id) {
+  const def = MACHINE_BY_ID[id];
+  const m = state.machines[id];
+  if (!def || !m || m.level < 1 || m.auto || state.coins < def.autoCost) return false;
+  state.coins -= def.autoCost;
+  m.auto = true;
+  return true;
+}
+
 /** Tap a machine: starts one production cycle if it is idle. */
 export function startCycle(state, id) {
   const m = state.machines[id];
@@ -103,12 +132,12 @@ export function startCycle(state, id) {
   return true;
 }
 
-/** Coins per second from machines that run by themselves (Part 3 turns `auto` on). */
+/** Coins per second from machines that run by themselves. */
 export function incomePerSecond(state) {
   let total = 0;
   for (const def of MACHINES) {
     const m = state.machines[def.id];
-    if (m.level >= 1 && m.auto) total += machineOutput(def, m.level, state) / def.cycleTime;
+    if (m.level >= 1 && m.auto) total += machineOutput(def, m.level, state) / cycleTimeOf(def, state);
   }
   return total;
 }
@@ -123,13 +152,14 @@ export function updateEconomy(state, dt, onProduce) {
       m.running = true;
       m.progress = 0;
     }
+    const ct = cycleTimeOf(def, state);
     m.progress += dt;
     let guard = 0;
-    while (m.running && m.progress >= def.cycleTime && guard++ < 1000) {
+    while (m.running && m.progress >= ct && guard++ < 1000) {
       const amount = machineOutput(def, m.level, state);
       addCoins(state, amount);
       if (onProduce) onProduce(def.id, amount);
-      m.progress -= def.cycleTime;
+      m.progress -= ct;
       if (!m.auto) {
         m.running = false;
         m.progress = 0;

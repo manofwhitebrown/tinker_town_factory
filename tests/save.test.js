@@ -98,5 +98,40 @@ test('newer saves are rejected', () => {
 });
 
 test('serialize includes version', () => {
-  assert.equal(JSON.parse(serialize(createInitialState())).v, 1);
+  assert.equal(JSON.parse(serialize(createInitialState())).v, 2);
+});
+
+test('real v1 save migrates to v2 and keeps progress', () => {
+  const v1 = JSON.stringify({
+    v: 1,
+    data: { coins: 10, lifetimeCoins: 5000, machines: { sewing: { level: 12 }, loom: { level: 3 } } },
+  });
+  const s = deserialize(v1); // uses the real MIGRATIONS table
+  assert.equal(s.version, 2);
+  assert.equal(s.runCoins, 5000);
+  assert.equal(s.machines.sewing.level, 12);
+  assert.equal(s.machines.loom.level, 3);
+  assert.equal(s.prestige.totalPoints, 0);
+});
+
+test('hydrate keeps prestige data and caps upgrade levels', () => {
+  const s = hydrate({
+    lifetimeCoins: 10, prestige: { points: 4, totalPoints: 2, count: 3, upgrades: { thimble: 999, seed: 2 } },
+  });
+  assert.equal(s.prestige.points, 4);
+  assert.equal(s.prestige.totalPoints, 4); // never below unspent points
+  assert.equal(s.prestige.count, 3);
+  assert.equal(s.prestige.upgrades.thimble, 30);
+  assert.equal(s.prestige.upgrades.seed, 2);
+});
+
+test('hydrate re-opens wings the lifetime earnings qualify for', () => {
+  const s = hydrate({ lifetimeCoins: 6e6, runCoins: 6e6 });
+  assert.equal(s.wings.toys, true);
+  assert.equal(s.wings.gadgets, false);
+});
+
+test('hydrate ignores a selected wing that is still locked', () => {
+  const s = hydrate({ settings: { wing: 'candy' } });
+  assert.equal(s.settings.wing, 'cloth');
 });

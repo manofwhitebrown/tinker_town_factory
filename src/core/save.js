@@ -4,7 +4,10 @@ import { hydrate } from './state.js';
 // Save format: { v: <version>, data: <state> }
 // To change the state shape later: bump CONFIG.saveVersion and add a
 // migration keyed by the OLD version, e.g. MIGRATIONS[1] = (data) => ({...}).
-export const MIGRATIONS = {};
+export const MIGRATIONS = {
+  // v1 -> v2 (Part 4): runCoins was added. Treat everything earned so far as this run.
+  1: (d) => ({ ...d, runCoins: d.lifetimeCoins ?? d.coins ?? 0 }),
+};
 
 export function serialize(state) {
   return JSON.stringify({ v: CONFIG.saveVersion, data: state });

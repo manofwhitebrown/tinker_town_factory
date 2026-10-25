@@ -3,15 +3,32 @@ import { CONFIG } from './data/config.js';
 import { createInitialState } from './core/state.js';
 import { createSaveManager } from './core/save.js';
 import { Loop } from './core/loop.js';
-import { addCoins, buyMachine, startCycle, updateEconomy } from './systems/economy.js';
+import {
+  addCoins, buyAuto, buyMachine, offlineCapSeconds, startCycle, updateEconomy,
+} from './systems/economy.js';
+import { applyOffline } from './systems/offline.js';
+import { buyUpgrade, doPrestige, pendingPoints } from './systems/prestige.js';
+import { checkWingUnlocks } from './systems/wings.js';
 import { createUI } from './ui/ui.js';
+import { formatNumber } from './core/format.js';
 
 const saves = createSaveManager();
 const debug = new URLSearchParams(location.search).has('debug');
 
 const game = { state: saves.load() || createInitialState() };
 let sinceSave = 0;
+let sinceWingCheck = 0;
 let ui;
+
+/** Credit time spent away and tell the player about it. */
+function settleAway(seconds) {
+  const away = applyOffline(game.state, seconds);
+  checkWingUnlocks(game.state);
+  if (away.coins > 0 && away.rawSeconds >= CONFIG.offlinePopupMinSeconds && ui) {
+    ui.showWelcome(away, offlineCapSeconds(game.state));
+  }
+  return away;
+}
 
 const actions = {
   tap(id) {
@@ -23,8 +40,34 @@ const actions = {
     if (bought) saves.save(game.state);
     ui.render();
   },
+  buyAuto(id) {
+    if (buyAuto(game.state, id)) {
+      saves.save(game.state);
+      ui.toast('Automated');
+    }
+    ui.render();
+  },
   setBuyMode(mode) {
     game.state.settings.buyMode = mode;
+    ui.render();
+  },
+  setWing(id) {
+    if (game.state.wings[id]) game.state.settings.wing = id;
+    ui.render();
+  },
+  prestige() {
+    const n = pendingPoints(game.state);
+    if (n < 1) return;
+    const ok = window.confirm(
+      `Reopen the factory and hire ${formatNumber(n)} ${n === 1 ? 'manager' : 'managers'}?\n\nCoins and machines reset. Managers, upgrades and open wings stay.`);
+    if (!ok) return;
+    doPrestige(game.state);
+    saves.save(game.state);
+    ui.render();
+    ui.toast(`Hired ${formatNumber(n)} ${n === 1 ? 'manager' : 'managers'}`);
+  },
+  upgrade(id) {
+    if (buyUpgrade(game.state, id)) saves.save(game.state);
     ui.render();
   },
   exportSave() {
@@ -55,13 +98,29 @@ const actions = {
     ui.rebuild();
     ui.toast('Fresh start');
   },
+  // ---- debug-only (?debug=1) ----
   cheat(amount) {
     addCoins(game.state, amount);
+    checkWingUnlocks(game.state);
+    ui.render();
+  },
+  cheatAway(seconds) {
+    settleAway(seconds);
+    ui.render();
+  },
+  cheatPoints(n) {
+    game.state.prestige.points += n;
+    game.state.prestige.totalPoints += n;
     ui.render();
   },
 };
 
 ui = createUI(document.getElementById('app'), game, actions, { debug });
+
+// Time since the game was last open.
+settleAway((Date.now() - game.state.lastSaved) / 1000);
+saves.save(game.state);
+ui.render();
 
 const loop = new Loop({
   step: 1 / CONFIG.tickRate,
@@ -69,6 +128,13 @@ const loop = new Loop({
   update(dt) {
     updateEconomy(game.state, dt, ui.onProduce);
     game.state.stats.playSeconds += dt;
+
+    sinceWingCheck += dt;
+    if (sinceWingCheck >= 0.5) {
+      sinceWingCheck = 0;
+      for (const w of checkWingUnlocks(game.state)) ui.toast(`${w.name} is open!`);
+    }
+
     sinceSave += dt;
     if (sinceSave >= CONFIG.autosaveSeconds) {
       sinceSave = 0;
@@ -78,10 +144,16 @@ const loop = new Loop({
   render: () => ui.render(),
 });
 
-// Save whenever the player leaves; never count time spent hidden.
+// Leaving: save. Coming back: credit the time away.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) saves.save(game.state);
-  else loop.resetClock();
+  if (document.hidden) {
+    saves.save(game.state);
+  } else {
+    settleAway((Date.now() - game.state.lastSaved) / 1000);
+    saves.save(game.state);
+    loop.resetClock();
+    ui.render();
+  }
 });
 window.addEventListener('pagehide', () => saves.save(game.state));
 

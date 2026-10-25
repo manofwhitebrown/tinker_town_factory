@@ -2,7 +2,7 @@
 
 A cozy, endless idle factory game. Built as plain HTML5 + JavaScript (Vite), wrapped into an Android APK with Capacitor in Part 8.
 
-**Status: Parts 0-2 of 9 done** (scaffold, core engine, machines & economy).
+**Status: Parts 0-5 of 9 done** (scaffold, engine, economy, automation + offline income, prestige, factory wings).
 
 ## Run it
 
@@ -21,21 +21,24 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 
 - Tap a machine to run one production cycle; the thread bar fills, then you get coins.
 - Spend coins to level machines up. Pick **x1 / x10 / Max** for how many levels to buy at once.
-- Machine N+1 unlocks when you own machine N.
-- Every 10/25/50/100... levels a machine's output doubles (see `CONFIG.milestones`).
+- **Automate** a machine (button under its card) and it runs forever by itself.
+- Machines **keep earning while you are away** (up to 8 hours). You get a "Welcome back" summary.
+- Every 10/25/50/100... levels a machine's output doubles.
+- **Managers tab:** once you have earned 1M coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
+- **Wings:** Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa). Each is a bigger tier of the same coin pool.
 - Progress autosaves every 10 seconds and when you leave the page.
-- "Copy save code" / "Load save code" back up progress as text.
 
 ## Project layout
 
 ```
 src/
   core/      state.js (state shape + repair), save.js (versioned saves), loop.js (fixed timestep), format.js (1.2K, 3.4M)
-  systems/   economy.js (costs, buying, production cycles)
-  data/      config.js (global knobs), machines.js (every machine's numbers)
-  ui/        ui.js (rendering), icons.js (SVG icons), styles.css
+  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js
+  data/      config.js (global knobs), machines.js (wings + every machine's numbers), prestige.js (manager tuning)
+  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, moreView.js, icons.js (SVG), styles.css, dom.js
   main.js    wires it all together
 tests/       node:test unit tests
+tools/simulate.js   balancing bot: `node tools/simulate.js` prints how long milestones take
 capacitor.config.json   stub, used in Part 8
 .github/workflows/ci.yml   runs tests + build on every push
 ```
@@ -44,20 +47,23 @@ capacitor.config.json   stub, used in Part 8
 
 Edit numbers only in `src/data/`:
 
-- `machines.js`: `baseCost`, `baseOutput`, `cycleTime` per machine. Price of the next level is `baseCost * 1.15^levelsOwned`.
-- `config.js`: price growth, milestone levels, autosave interval.
+- `machines.js`: `baseCost`, `baseOutput`, `cycleTime`, `autoCost` per machine, and each wing's `unlockAt`. Price of the next level is `baseCost * 1.15^levelsOwned`.
+- `prestige.js`: manager formula (`divisor`), bonus per manager, and the upgrade shop.
+- `config.js`: price growth, milestone levels, offline cap and efficiency, autosave interval.
 
-To add a machine, append an entry to `MACHINES` and add an icon in `src/ui/icons.js`. Saves from older versions pick up new machines automatically.
+After changing numbers run `node tools/simulate.js` to see the effect on pacing.
+
+To add a machine, append an entry to `MACHINES` and add an icon in `src/ui/icons.js`. To add a wing, add it to `WINGS`. Saves from older versions pick up new machines and wings automatically.
 
 ## Saves
 
-Stored in `localStorage` as `{ v: <version>, data: <state> }`. If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
+Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version 2; v1 saves migrate automatically). If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
 
 ## Known limits (by design, for now)
 
-- Numbers are standard JS doubles (max about 1e308). Plenty for this game; formatter switches to `1e40` style past 1e36.
-- Machines only run when you tap them. Automation (`auto`) and offline earnings arrive in **Part 3**; the engine already supports `auto`.
-- The game pauses while the tab is hidden; Part 3 replaces that with offline earnings.
+- Numbers are standard JS doubles (max about 1e308). Plenty for this game; the formatter switches to `1e40` style past 1e36.
+- Offline earnings trust the device clock.
+- Daily rewards, quests and achievements arrive in Part 6; sound, settings, tutorial and accessibility options in Part 7.
 
 ## Roadmap
 
@@ -66,10 +72,10 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }`. If you change the
 | 0 | Repo scaffold | done |
 | 1 | Core engine: state, loop, saves, number formatting | done |
 | 2 | Machines & economy | done |
-| 3 | Automation & offline income | next |
-| 4 | Prestige | |
-| 5 | Factory wings | |
-| 6 | Daily rewards, quests, achievements | |
+| 3 | Automation & offline income | done |
+| 4 | Prestige (managers + upgrade shop) | done |
+| 5 | Factory wings (4 wings, 21 machines) | done |
+| 6 | Daily rewards, quests, achievements, gems | next |
 | 7 | Polish, sound, accessibility | |
 | 8 | Android packaging + APK via GitHub Actions | |
 
@@ -78,7 +84,7 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }`. If you change the
 ```bash
 git init
 git add .
-git commit -m "Parts 0-2: scaffold, engine, economy"
+git commit -m "Parts 3-5: automation, offline income, prestige, wings"
 git branch -M main
 git remote add origin https://github.com/<you>/tinker-town-factory.git
 git push -u origin main
