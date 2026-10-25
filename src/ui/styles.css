@@ -1,0 +1,181 @@
+:root {
+  --paper: #e4ebf1;
+  --card: #f8fafc;
+  --ink: #1f2a44;
+  --muted: #5b6a82;
+  --stitch: #9fb0c4;
+  --coin: #f2b134;
+  --coin-deep: #b9780b;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+
+html, body { margin: 0; background: var(--ink); }
+body {
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+.app {
+  max-width: 520px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background-color: var(--paper);
+  /* pattern-paper grid */
+  background-image:
+    linear-gradient(rgba(31, 42, 68, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 42, 68, .05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  padding-bottom: calc(24px + var(--safe-bottom));
+}
+
+/* ---------- header ---------- */
+.top {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--ink);
+  color: #fff;
+  padding: calc(14px + var(--safe-top)) 20px 14px;
+  border-bottom: 3px dashed rgba(255, 255, 255, .22);
+}
+.brand { font-size: 13px; font-weight: 700; letter-spacing: .02em; color: #aebbd2; }
+.coins-row { display: flex; align-items: baseline; gap: 12px; margin-top: 2px; }
+.coins {
+  font-size: 44px; line-height: 1.05; font-weight: 800;
+  color: var(--coin);
+  font-variant-numeric: tabular-nums;
+}
+.rate { font-size: 15px; font-weight: 700; color: #cfd9ea; font-variant-numeric: tabular-nums; }
+
+/* ---------- buy mode ---------- */
+.buymodes {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px 6px;
+}
+.buymodes .label { font-size: 14px; font-weight: 700; color: var(--muted); margin-right: auto; }
+.mode {
+  font: inherit; font-size: 14px; font-weight: 800;
+  min-width: 56px; min-height: 40px; padding: 0 14px;
+  border-radius: 999px;
+  border: 2px dashed var(--stitch);
+  background: transparent; color: var(--ink);
+  cursor: pointer;
+}
+.mode[aria-pressed="true"] { background: var(--ink); color: #fff; border: 2px solid var(--ink); }
+
+/* ---------- machine cards ---------- */
+.machines { display: grid; gap: 12px; padding: 8px 16px 8px; }
+
+.card {
+  --accent: var(--ink);
+  position: relative;
+  display: flex; align-items: stretch;
+  background: var(--card);
+  border: 2px dashed color-mix(in srgb, var(--accent) 55%, var(--paper));
+  border-radius: 18px;
+  overflow: hidden;
+}
+.card.locked { --accent: #7d8aa1; background: rgba(248, 250, 252, .6); }
+
+.tap {
+  all: unset;
+  flex: 1; min-width: 0;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  grid-template-rows: auto auto auto;
+  column-gap: 12px; row-gap: 2px;
+  padding: 14px 12px 12px 14px;
+  cursor: pointer;
+}
+.tap:focus-visible, .buy:focus-visible, .mode:focus-visible, .foot button:focus-visible {
+  outline: 3px solid var(--coin); outline-offset: -3px;
+}
+.card.locked .tap { cursor: default; }
+.tap:active:not(:disabled) .icon { transform: scale(.92); }
+
+.icon {
+  grid-row: 1 / span 3;
+  width: 56px; height: 56px; align-self: center;
+  color: var(--accent);
+  transition: transform .08s ease-out;
+}
+.card.locked .icon { opacity: .5; }
+
+.title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.name { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.level { font-size: 13px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.card.locked .level { color: var(--muted); }
+.sub { font-size: 13px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* The progress "thread": dashes are revealed left to right as a cycle runs. */
+.thread {
+  align-self: end; margin-top: 8px;
+  position: relative; height: 6px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, rgba(31, 42, 68, .14) 0 8px, transparent 8px 12px);
+}
+.thread > i {
+  position: absolute; inset: 0; display: block;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 12px);
+  clip-path: inset(0 100% 0 0);
+}
+
+.hint { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+.buy {
+  all: unset;
+  box-sizing: border-box;
+  width: 104px; flex: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  text-align: center;
+  background: var(--ink); color: #fff;
+  cursor: pointer;
+  padding: 8px 6px;
+}
+.buy .b-label { font-size: 13px; font-weight: 800; }
+.buy .b-cost { font-size: 15px; font-weight: 800; color: var(--coin); font-variant-numeric: tabular-nums; }
+.buy:disabled { background: #cdd6e2; color: #6c7a90; cursor: default; }
+.buy:disabled .b-cost { color: #6c7a90; }
+.buy:active:not(:disabled) { filter: brightness(1.25); }
+
+.float {
+  position: absolute; left: 70px; top: 10px;
+  font-weight: 800; font-size: 16px; color: var(--coin-deep);
+  pointer-events: none;
+  animation: floatup .9s ease-out forwards;
+}
+@keyframes floatup {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-26px); }
+}
+
+/* ---------- footer + toast ---------- */
+.foot { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 16px 6px; }
+.foot button {
+  font: inherit; font-size: 13px; font-weight: 700;
+  min-height: 40px; padding: 0 14px;
+  border-radius: 999px; border: 2px dashed var(--stitch);
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.foot .dev { color: var(--coin-deep); border-color: var(--coin-deep); }
+.version { padding: 8px 18px; font-size: 12px; color: var(--muted); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + var(--safe-bottom)); transform: translateX(-50%);
+  background: var(--ink); color: #fff;
+  font-size: 14px; font-weight: 700;
+  padding: 10px 16px; border-radius: 999px;
+  max-width: 90vw; text-align: center;
+  z-index: 20;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float { animation-duration: .01s; }
+  .icon { transition: none; }
+}
