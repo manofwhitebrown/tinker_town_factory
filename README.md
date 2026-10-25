@@ -35,6 +35,7 @@ npm run build      # production build into dist/
 - **Wings:** 7 of them, 36 machines in total. Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa), Clockwork Tower (40Sx), Sky Dock (8Oc) and Star Observatory (1.7Dc). Each is a bigger tier of the same coin pool.
 - **Guide tab:** a plain-language page explaining every feature (machines, Automate, offline income, wings, managers and their upgrades, rewards, shop, settings, saving). Its numbers are read from `src/data/`, so it stays correct when you rebalance.
 - **Rewards tab:** a daily reward on a 7-day streak (a Streak Shield saves it if you miss a day), three daily quests that change at local midnight, and 29 achievements. They all pay **gems** (◆).
+- **Best value hint:** a gold star on the smartest purchase right now (logic in `src/systems/advisor.js`). Can be switched off in Settings.
 - **Golden Gear:** now and then a golden gear floats across the screen for ~12 seconds. Tap it for 8-25 minutes of income (and sometimes a gem). Tuning: `GOLDEN` in `src/data/meta.js`.
 - **Streak Shield:** saves your daily streak when you miss a day. Everyone starts with 1, you earn one at the end of each 7-day cycle, hold up to 3, and can buy more in the Shop.
 - **Welcome back x2:** the away-earnings popup has a Double button: free once a day, then 2 gems.

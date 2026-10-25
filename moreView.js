@@ -3,6 +3,7 @@ import { formatDuration, formatNumber } from '../core/format.js';
 import { CREDIT } from './guideView.js';
 
 const TOGGLES = [
+  ['hints', 'Best value hint', 'Marks the machine that is the smartest purchase right now.'],
   ['cozy', 'Cozy mode', 'Doubles all income for a relaxed pace. Turn it off for the original challenge.'],
   ['muted', 'Mute all sound', 'Silences sound effects and music.'],
   ['sfx', 'Sound effects', 'Taps, purchases and rewards.'],

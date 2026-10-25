@@ -235,6 +235,15 @@ button { font: inherit; color: inherit; }
 }
 .secondary:disabled { background: #e6ebf2; color: #6c7a90; border-color: var(--stitch); cursor: default; }
 
+/* ---------- best value hint ---------- */
+.card.tip { box-shadow: 0 0 0 3px var(--coin); }
+.card.tip .name::after {
+  content: '★ Best value'; margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: var(--coin); color: var(--ink); font-size: calc(11px * var(--fs)); font-weight: 800; white-space: nowrap;
+}
+.tip-btn { outline: 3px solid var(--coin); outline-offset: -3px; }
+.chip.tip::after { content: ' ★'; color: var(--coin-deep); }
+
 /* ---------- golden gear ---------- */
 .golden {
   position: fixed; z-index: 20; width: 68px; height: 68px; padding: 0;

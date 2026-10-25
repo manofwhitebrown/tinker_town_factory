@@ -5,6 +5,8 @@ import {
   cycleTimeOf, incomePerSecond, isUnlocked, isVisible, machineCost, machineOutput, nextMilestone, resolveBuyCount,
 } from '../systems/economy.js';
 import { nextGoal } from '../systems/goals.js';
+import { bestBuy } from '../systems/advisor.js';
+import { tutorialActive } from '../systems/tutorial.js';
 import { ICONS } from './icons.js';
 import { h, setText, setDisabled, setAttr } from './dom.js';
 
@@ -95,6 +97,11 @@ export function createFactoryView({ game, actions }) {
       setText(sub, open ? '' : `at ${formatNumber(w.unlockAt)} earned`);
     }
 
+    // "Best value" hint: tag the smartest purchase (and the wing it lives in).
+    const tip = s.settings.hints && !tutorialActive(s) ? bestBuy(s) : null;
+    const tipWing = tip ? MACHINES.find((d) => d.id === tip.id).wing : null;
+    for (const w of WINGS) chips[w.id].btn.classList.toggle('tip', w.id === tipWing && w.id !== wingId);
+
     for (const mode of BUY_MODES) {
       setAttr(modes[mode], 'aria-pressed', String(s.settings.buyMode) === String(mode) ? 'true' : 'false');
     }
@@ -118,13 +125,17 @@ export function createFactoryView({ game, actions }) {
         setDisabled(c.tap, true);
         c.buy.hidden = true;
         c.autobar.hidden = true;
-        c.root.classList.remove('auto');
+        c.root.classList.remove('auto', 'tip');
         return;
       }
 
       c.buy.hidden = false;
       if (c.icon._k !== def.icon) { c.icon.innerHTML = ICONS[def.icon] || ''; c.icon._k = def.icon; }
 
+      const isTip = !!tip && tip.id === def.id;
+      c.root.classList.toggle('tip', isTip);
+      c.buy.classList.toggle('tip-btn', isTip && tip.kind === 'level');
+      c.autobar.classList.toggle('tip-btn', isTip && tip.kind === 'auto');
       const owned = m.level >= 1;
       const auto = m.auto;
       const ct = cycleTimeOf(def, s);
