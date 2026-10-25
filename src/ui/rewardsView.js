@@ -74,7 +74,7 @@ export function createRewardsView({ game, actions }) {
     const reward = dailyReward(s, st.streak);
     setText(claim, st.claimable
       ? `Claim ${formatNumber(reward.coins)} coins${reward.gems ? ` + ${gemText(reward.gems)}` : ''}`
-      : 'Claimed today, come back tomorrow');
+      : st.clockBehind ? 'Your device date is behind your last claim' : 'Claimed today, come back tomorrow');
     setDisabled(claim, !st.claimable);
     setText(streakLine, st.claimable && st.streak === 1 && s.daily.streak > 0
       ? 'Your streak was broken. Claim to start a new one.'

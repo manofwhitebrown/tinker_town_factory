@@ -16,7 +16,7 @@ export const TUTORIAL_STEPS = [
     id: 'upgrade',
     text: 'Spend coins on Buy to level it up. Higher levels earn more per tap.',
     target: { machine: 'sewing', part: 'buy' },
-    done: (s) => s.machines.sewing.level >= 3,
+    done: (s) => s.machines.sewing.level >= 3 || s.machines.loom.level >= 1,
   },
   {
     id: 'second',

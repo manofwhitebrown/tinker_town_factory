@@ -25,12 +25,15 @@ export function addGems(state, n) {
  * What the daily button should do right now.
  *  claimable: can claim today
  *  streak:    the streak you will have after claiming (or have, if already claimed)
+ *  clockBehind: true when claiming is locked because the device date is earlier than the last claim
  */
 export function dailyStatus(state, now = Date.now()) {
   const today = dayNumber(now);
   const d = state.daily;
   const last = d.lastDay;
-  if (last !== null && last >= today) return { claimable: false, streak: d.streak, today };
+  // `clockBehind`: the last claim is dated in the future (device clock was wrong or moved back).
+  // Claiming stays locked on purpose (it stops clock tricks), but the UI can now say why.
+  if (last !== null && last >= today) return { claimable: false, streak: d.streak, today, clockBehind: last > today };
   const continues = last !== null && last === today - 1;
   return { claimable: true, streak: continues ? d.streak + 1 : 1, today };
 }
@@ -96,6 +99,8 @@ export function makeQuests(state, day) {
 export function refreshQuests(state, now = Date.now()) {
   const today = dayNumber(now);
   if (state.quests.day === today) return false;
+  // Pay out anything finished but forgotten, so a missed "Claim" never loses gems.
+  state.quests.list.forEach((_, i) => claimQuest(state, i));
   state.quests = { day: today, list: makeQuests(state, today), bonusClaimed: false };
   return true;
 }

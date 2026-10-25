@@ -85,8 +85,8 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version
 | 4 | Prestige (managers + upgrade shop) | done |
 | 5 | Factory wings (4 wings, 21 machines) | done |
 | 6 | Daily rewards, quests, achievements, gems | done |
-| 7 | Polish, sound, accessibility | next |
-| 8 | Android packaging + APK via GitHub Actions | |
+| 7 | Polish, sound, accessibility, tutorial | done |
+| 8 | Android packaging + APK via GitHub Actions | done |
 
 ## Pushing to GitHub
 

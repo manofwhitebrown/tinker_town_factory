@@ -378,3 +378,8 @@ html[data-calm] .card.pop, html[data-calm] .card.running .icon, html[data-calm] 
   html[data-large] .main { flex-direction: column; }
   html[data-large] .buy { width: 100%; flex-direction: row; justify-content: space-between; padding: 10px 16px; min-height: 48px; }
 }
+
+/* ---------- next goal strip ---------- */
+.goal { margin: 12px 16px 0; padding: 8px 14px 6px; border: 2px dashed var(--stitch); border-radius: 14px; background: rgba(248, 250, 252, .7); }
+.goal-text { font-size: calc(13px * var(--fs, 1)); font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal .bar { margin: 6px 0 2px; height: 8px; }

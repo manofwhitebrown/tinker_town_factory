@@ -25,7 +25,6 @@ const saves = createSaveManager();
 const debug = new URLSearchParams(location.search).has('debug');
 
 const game = { state: saves.load() || createInitialState() };
-refreshQuests(game.state);
 let sinceSave = 0;
 let sinceWingCheck = 0;
 let ui;
@@ -33,7 +32,11 @@ const audio = createAudio(() => game.state.settings);
 
 /** New day? Unlock achievements. Safe to call often. */
 function checkMeta() {
-  if (refreshQuests(game.state)) ui.toast('New daily quests');
+  const gemsBefore = game.state.gems;
+  if (refreshQuests(game.state)) {
+    const got = game.state.gems - gemsBefore;
+    ui.toast(got > 0 ? `New daily quests. Collected ${gemWord(got)} from yesterday` : 'New daily quests');
+  }
   for (const a of checkAchievements(game.state)) {
     ui.toast(`Achievement: ${a.name} (+${gemWord(a.gems)})`);
     ui.feedback('achievement');

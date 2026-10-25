@@ -4,6 +4,7 @@ import { formatNumber, formatDuration } from '../core/format.js';
 import {
   cycleTimeOf, isUnlocked, isVisible, machineCost, machineOutput, nextMilestone, resolveBuyCount,
 } from '../systems/economy.js';
+import { nextGoal } from '../systems/goals.js';
 import { ICONS } from './icons.js';
 import { h, setText, setDisabled, setAttr } from './dom.js';
 
@@ -65,11 +66,23 @@ export function createFactoryView({ game, actions }) {
     list.append(c.root);
   });
 
-  const el = h('div', { class: 'view' }, wingRow, modeRow, list);
+  const goalText = h('span', { class: 'goal-text' });
+  const goalFill = h('i');
+  const goal = h('div', { class: 'goal', hidden: true }, goalText, h('div', { class: 'bar' }, goalFill));
+
+  const el = h('div', { class: 'view' }, goal, wingRow, modeRow, list);
 
   function render() {
     const s = game.state;
     const wingId = s.settings.wing;
+
+    const g = nextGoal(s);
+    goal.hidden = !g;
+    if (g) {
+      setText(goalText, `Next goal: ${g.label} (${formatNumber(g.have)} / ${formatNumber(g.need)})`);
+      const w = `${(g.fraction * 100).toFixed(1)}%`;
+      if (goalFill._w !== w) { goalFill.style.width = w; goalFill._w = w; }
+    }
 
     for (const w of WINGS) {
       const open = !!s.wings[w.id];

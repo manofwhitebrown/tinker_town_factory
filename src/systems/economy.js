@@ -96,9 +96,11 @@ export function isVisible(state, id) {
 }
 
 export function addCoins(state, amount) {
-  state.coins += amount;
-  state.lifetimeCoins += amount;
-  state.runCoins += amount;
+  if (!(amount > 0)) return; // ignores 0, negatives and NaN
+  const cap = CONFIG.maxCoins;
+  state.coins = Math.min(cap, state.coins + amount);
+  state.lifetimeCoins = Math.min(cap, state.lifetimeCoins + amount);
+  state.runCoins = Math.min(cap, state.runCoins + amount);
 }
 
 /** How many levels a buy of this mode would purchase (0 = cannot afford). */

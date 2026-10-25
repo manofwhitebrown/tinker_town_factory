@@ -62,6 +62,7 @@ export function startNewRun(state) {
 
 const num = (v, fallback = 0) =>
   typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback;
+const capped = (v, max) => Math.min(num(v), max);
 
 /**
  * Turn untrusted/old save data into a valid state: fills missing fields,
@@ -71,14 +72,14 @@ export function hydrate(raw, now = Date.now()) {
   const s = createInitialState(now);
   if (!raw || typeof raw !== 'object') return s;
 
-  s.coins = num(raw.coins);
-  s.lifetimeCoins = Math.max(num(raw.lifetimeCoins), s.coins);
-  s.runCoins = Math.min(num(raw.runCoins), s.lifetimeCoins);
+  s.coins = capped(raw.coins, CONFIG.maxCoins);
+  s.lifetimeCoins = Math.max(capped(raw.lifetimeCoins, CONFIG.maxCoins), s.coins);
+  s.runCoins = Math.min(capped(raw.runCoins, CONFIG.maxCoins), s.lifetimeCoins);
 
   for (const def of MACHINES) {
     const m = raw.machines && raw.machines[def.id];
     if (!m || typeof m !== 'object') continue;
-    const level = Math.floor(num(m.level));
+    const level = Math.min(Math.floor(num(m.level)), CONFIG.maxLevel);
     const running = !!m.running && level >= 1;
     s.machines[def.id] = {
       level,
@@ -96,9 +97,9 @@ export function hydrate(raw, now = Date.now()) {
   }
 
   const p = raw.prestige && typeof raw.prestige === 'object' ? raw.prestige : {};
-  s.prestige.points = Math.floor(num(p.points));
-  s.prestige.totalPoints = Math.max(Math.floor(num(p.totalPoints)), s.prestige.points);
-  s.prestige.count = Math.floor(num(p.count));
+  s.prestige.points = Math.floor(capped(p.points, 1e15));
+  s.prestige.totalPoints = Math.max(Math.floor(capped(p.totalPoints, 1e15)), s.prestige.points);
+  s.prestige.count = Math.floor(capped(p.count, 1e9));
   for (const u of UPGRADES) {
     const lvl = Math.floor(num(p.upgrades && p.upgrades[u.id]));
     s.prestige.upgrades[u.id] = Math.min(lvl, UPGRADES_BY_ID[u.id].max);
@@ -107,7 +108,7 @@ export function hydrate(raw, now = Date.now()) {
   const st = raw.stats || {};
   s.stats.taps = Math.floor(num(st.taps));
   s.stats.playSeconds = num(st.playSeconds);
-  s.stats.offlineCoins = num(st.offlineCoins);
+  s.stats.offlineCoins = capped(st.offlineCoins, CONFIG.maxCoins);
 
   const set = raw.settings || {};
   if (BUY_MODES.includes(set.buyMode)) s.settings.buyMode = set.buyMode;
@@ -124,7 +125,7 @@ export function hydrate(raw, now = Date.now()) {
   s.stats.questsDone = Math.floor(num(st.questsDone));
 
   // ---- Part 6 ----
-  s.gems = Math.floor(num(raw.gems));
+  s.gems = Math.floor(capped(raw.gems, CONFIG.maxGems));
   const shop = raw.gemShop || {};
   for (const item of GEM_SHOP) {
     if (item.kind === 'permanent') s.gemShop[item.id] = Math.min(Math.floor(num(shop[item.id])), item.max);
