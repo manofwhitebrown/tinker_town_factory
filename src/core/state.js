@@ -2,6 +2,17 @@ import { CONFIG } from '../data/config.js';
 import { MACHINES, WINGS } from '../data/machines.js';
 import { UPGRADES, UPGRADES_BY_ID, seedCoins } from '../data/prestige.js';
 import { ACHIEVEMENT_BY_ID, GEM_SHOP, QUEST_TYPES } from '../data/meta.js';
+import { TUTORIAL_STEPS } from '../data/tutorial.js';
+
+/** Player preferences that are simple on/off switches. */
+export const TOGGLE_SETTINGS = {
+  muted: false,        // quick mute for everything
+  sfx: true,
+  music: true,
+  largeText: false,
+  colorblind: false,
+  reduceMotion: false,
+};
 
 export const BUY_MODES = [1, 10, 'max'];
 
@@ -36,7 +47,7 @@ export function createInitialState(now = Date.now()) {
     daily: { lastDay: null, streak: 0, total: 0 },        // lastDay = local day number of last claim
     quests: { day: null, list: [], bonusClaimed: false },
     achievements: {},                                     // id -> true
-    settings: { buyMode: 1, wing: WINGS[0].id },
+    settings: { buyMode: 1, wing: WINGS[0].id, ...TOGGLE_SETTINGS, tutorialStep: 0 },
     createdAt: now,
     lastSaved: now,
   };
@@ -101,6 +112,14 @@ export function hydrate(raw, now = Date.now()) {
   const set = raw.settings || {};
   if (BUY_MODES.includes(set.buyMode)) s.settings.buyMode = set.buyMode;
   if (WINGS.some((w) => w.id === set.wing) && s.wings[set.wing]) s.settings.wing = set.wing;
+  for (const key of Object.keys(TOGGLE_SETTINGS)) {
+    if (typeof set[key] === 'boolean') s.settings[key] = set[key];
+  }
+  // Tutorial: saves from before it existed with real progress skip it.
+  const veteran = s.lifetimeCoins >= 100 || s.stats.taps >= 5;
+  s.settings.tutorialStep = Number.isFinite(set.tutorialStep)
+    ? Math.min(Math.max(Math.floor(set.tutorialStep), 0), TUTORIAL_STEPS.length)
+    : (veteran ? TUTORIAL_STEPS.length : 0);
 
   s.stats.questsDone = Math.floor(num(st.questsDone));
 

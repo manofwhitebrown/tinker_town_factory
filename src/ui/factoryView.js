@@ -7,6 +7,9 @@ import {
 import { ICONS } from './icons.js';
 import { h, setText, setDisabled, setAttr } from './dom.js';
 
+// Colorblind-safe accents (Okabe-Ito, darkened for contrast on light cards). Used when that setting is on.
+const CB_COLORS = ['#0072b2', '#d55e00', '#007a5a', '#b24a86', '#8a6200', '#3f6fb0'];
+
 const MODE_LABEL = { 1: '×1', 10: '×10', max: 'Max' };
 
 export function createFactoryView({ game, actions }) {
@@ -33,7 +36,7 @@ export function createFactoryView({ game, actions }) {
   }
 
   const list = h('section', { class: 'machines', 'aria-label': 'Machines' });
-  for (const def of MACHINES) {
+  MACHINES.forEach((def, idx) => {
     const c = { floats: 0, pv: '' };
     c.icon = h('div', { class: 'icon' });
     c.name = h('span', { class: 'name' });
@@ -56,11 +59,11 @@ export function createFactoryView({ game, actions }) {
     c.autobar = h('button', { class: 'autobar', type: 'button', hidden: true, onclick: () => actions.buyAuto(def.id) },
       c.autoLabel);
 
-    c.root = h('article', { class: 'card', style: `--accent:${def.color}`, hidden: true },
+    c.root = h('article', { class: 'card', style: `--base:${def.color};--cb:${CB_COLORS[idx % CB_COLORS.length]}`, hidden: true },
       h('div', { class: 'main' }, c.tap, c.buy), c.autobar);
     cards[def.id] = c;
     list.append(c.root);
-  }
+  });
 
   const el = h('div', { class: 'view' }, wingRow, modeRow, list);
 
@@ -111,6 +114,7 @@ export function createFactoryView({ game, actions }) {
       const auto = m.auto;
       const ct = cycleTimeOf(def, s);
       c.root.classList.toggle('auto', auto);
+      c.root.classList.toggle('running', m.running || auto);
       setDisabled(c.tap, !owned || auto);
 
       setText(c.name, def.name);
@@ -154,5 +158,22 @@ export function createFactoryView({ game, actions }) {
     setTimeout(() => { f.remove(); c.floats--; }, 900);
   }
 
-  return { el, render, onProduce };
+  /** Pulse a card (and optionally its buy / automate button) for the tutorial. */
+  let hl = '';
+  function setHighlight(id, part) {
+    const key = id ? `${id}:${part || ''}` : '';
+    if (key === hl) return;
+    hl = key;
+    for (const def of MACHINES) {
+      const c = cards[def.id];
+      const on = def.id === id;
+      c.tap.classList.toggle('hl', on && !part);
+      c.buy.classList.toggle('hl', on && part === 'buy');
+      c.autobar.classList.toggle('hl', on && part === 'auto');
+    }
+  }
+
+  const cardEl = (id) => (cards[id] ? cards[id].root : null);
+
+  return { el, render, onProduce, setHighlight, cardEl };
 }

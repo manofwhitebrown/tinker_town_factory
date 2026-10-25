@@ -10,6 +10,8 @@ export const MIGRATIONS = {
   // v2 -> v3 (Part 6): gems, daily, quests, achievements, gem shop. hydrate() fills the new
   // fields with defaults, so nothing needs copying.
   2: (d) => d,
+  // v3 -> v4 (Part 7): sound / accessibility / tutorial settings. hydrate() fills defaults.
+  3: (d) => d,
 };
 
 export function serialize(state) {

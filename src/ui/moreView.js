@@ -1,7 +1,30 @@
 import { h, setText } from './dom.js';
 import { formatDuration, formatNumber } from '../core/format.js';
 
+const TOGGLES = [
+  ['muted', 'Mute all sound', 'Silences sound effects and music.'],
+  ['sfx', 'Sound effects', 'Taps, purchases and rewards.'],
+  ['music', 'Music', 'A soft background tune.'],
+  ['largeText', 'Large text', 'Bigger words and numbers.'],
+  ['colorblind', 'Colorblind-friendly', 'Safer machine colors and a plain background.'],
+  ['reduceMotion', 'Reduce motion', 'Turns off particles and wiggles.'],
+];
+
 export function createMoreView({ game, actions, debug }) {
+  const switches = {};
+  const settings = h('section', { class: 'panel' }, h('h2', {}, 'Settings'));
+  for (const [key, name, desc] of TOGGLES) {
+    const btn = h('button', {
+      class: 'switch', type: 'button', role: 'switch', 'aria-checked': 'false', 'aria-label': name,
+      onclick: () => actions.setSetting(key, !game.state.settings[key]),
+    }, h('i'));
+    switches[key] = btn;
+    settings.append(h('div', { class: 'up' },
+      h('div', { class: 'up-text' }, h('div', { class: 'up-name' }, name), h('div', { class: 'up-desc' }, desc)), btn));
+  }
+  settings.append(h('div', { class: 'foot', style: 'margin-top:12px' },
+    h('button', { type: 'button', onclick: () => actions.tutorialReplay() }, 'Replay tutorial')));
+
   const stats = h('div', { class: 'stat-block' });
   const save = h('section', { class: 'panel' },
     h('h2', {}, 'Your save'),
@@ -11,7 +34,7 @@ export function createMoreView({ game, actions, debug }) {
       h('button', { type: 'button', onclick: () => actions.importSave() }, 'Load save code'),
       h('button', { type: 'button', onclick: () => actions.resetSave() }, 'Start over')));
 
-  const panels = [h('section', { class: 'panel' }, h('h2', {}, 'Stats'), stats), save];
+  const panels = [settings, h('section', { class: 'panel' }, h('h2', {}, 'Stats'), stats), save];
 
   if (debug) {
     const dev = h('div', { class: 'foot' });
@@ -25,12 +48,16 @@ export function createMoreView({ game, actions, debug }) {
     dev.append(h('button', { class: 'dev', type: 'button', onclick: () => actions.cheatGems(20) }, '+20 gems'));
     panels.push(h('section', { class: 'panel' }, h('h2', {}, 'Debug'), dev));
   }
-  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.3 · parts 0–6'));
+  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.4 · parts 0–7'));
 
   const el = h('div', { class: 'view' }, ...panels);
 
   function render() {
     const s = game.state;
+    for (const [key] of TOGGLES) {
+      const on = String(!!s.settings[key]);
+      if (switches[key].getAttribute('aria-checked') !== on) switches[key].setAttribute('aria-checked', on);
+    }
     const line = (a, b) => h('div', { class: 'stat-row' }, h('span', {}, a), h('b', {}, b));
     const key = [s.lifetimeCoins, s.stats.taps, s.prestige.count, Math.floor(s.stats.playSeconds / 10), s.stats.offlineCoins].join('|');
     if (stats._k === key) return;

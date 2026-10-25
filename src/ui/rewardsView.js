@@ -65,9 +65,9 @@ export function createRewardsView({ game, actions }) {
     const shown = st.claimable ? slot : rewardSlot(s.daily.streak);
     days.forEach((d, i) => {
       const r = DAILY.rewards[i];
-      const text = r.gems ? `${r.gems} ◆` : `${r.coinMinutes}m`;
-      setText(d.prize, text);
       const done = st.claimable ? i < slot && st.streak > 1 : i <= shown;
+      const text = done ? '✓' : r.gems ? `${r.gems} ◆` : `${r.coinMinutes}m`; // check mark = not just colour
+      setText(d.prize, text);
       d.cell.classList.toggle('done', done);
       d.cell.classList.toggle('today', st.claimable && i === slot);
     });

@@ -2,11 +2,11 @@
 
 A cozy, endless idle factory game. Built as plain HTML5 + JavaScript (Vite), wrapped into an Android APK with Capacitor in Part 8.
 
-**Status: Parts 0-6 of 9 done** (scaffold, engine, economy, automation + offline income, prestige, factory wings, daily rewards / quests / achievements / gems).
+**Status: all parts done (0-8).** Scaffold, engine, economy, automation + offline income, prestige, factory wings, daily rewards / quests / achievements / gems, polish + sound + accessibility + tutorial, Android packaging + CI.
 
 ## Run it
 
-Requires Node 18+.
+Requires Node 22+ (Capacitor needs it).
 
 ```bash
 npm install
@@ -16,6 +16,11 @@ npm run build      # production build into dist/
 ```
 
 Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat buttons (+1K ... +1T) and `window.game` in the console.
+
+## Play it / get the APK
+
+- **In the browser:** every push to `main` is published to GitHub Pages. One-time: repo Settings > Pages > Source = **GitHub Actions**.
+- **On your phone:** every push builds a debug APK (Actions tab > run > Artifacts). Pushing a tag like `v1.0.0` builds a signed release APK. Setup and the keystore guide: [docs/ANDROID.md](docs/ANDROID.md).
 
 ## How to play (so far)
 
@@ -28,6 +33,7 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 - **Wings:** Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa). Each is a bigger tier of the same coin pool.
 - **Rewards tab:** a daily reward on a 7-day streak (miss a day and it resets), three daily quests that change at local midnight, and 22 achievements. They all pay **gems** (◆).
 - **Shop tab:** spend gems on a Coin Crate (1 hour of income), Double Time (2x income for 15 min, pauses while the game is closed), and permanent Gem Polish (+5% income per level) and Bigger Vault (+1h offline time per level).
+- **Settings tab:** mute button (also in the header), sound effects, music (all generated in code), Large text, Colorblind-friendly colors, Reduce motion, and Replay tutorial. A short tutorial guides your first minutes.
 - Progress autosaves every 10 seconds and when you leave the page.
 
 ## Project layout
@@ -60,7 +66,7 @@ To add a machine, append an entry to `MACHINES` and add an icon in `src/ui/icons
 
 ## Saves
 
-Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version 3; v1 and v2 saves migrate automatically). If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
+Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version 4; older saves migrate automatically). If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
 
 ## Known limits (by design, for now)
 

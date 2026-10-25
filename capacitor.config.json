@@ -1,5 +1,23 @@
 {
   "appId": "com.tinkertown.factory",
   "appName": "Tinker Town Factory",
-  "webDir": "dist"
+  "webDir": "dist",
+  "backgroundColor": "#1f2a44",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 250,
+      "backgroundColor": "#1f2a44",
+      "showSpinner": false
+    },
+    "SystemBars": {
+      "insetsHandling": "native",
+      "style": "DARK",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
 }

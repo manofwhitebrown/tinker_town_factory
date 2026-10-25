@@ -1,6 +1,6 @@
 import './ui/styles.css';
 import { CONFIG } from './data/config.js';
-import { createInitialState } from './core/state.js';
+import { createInitialState, TOGGLE_SETTINGS } from './core/state.js';
 import { createSaveManager } from './core/save.js';
 import { Loop } from './core/loop.js';
 import {
@@ -13,9 +13,14 @@ import {
   buyGemItem, checkAchievements, claimDaily, claimQuest, refreshQuests, track,
 } from './systems/meta.js';
 import { GEM_SHOP_BY_ID } from './data/meta.js';
+import {
+  advanceTutorial, nextStep, replayTutorial, skipTutorial, visitTab,
+} from './systems/tutorial.js';
+import { createAudio } from './audio/audio.js';
 import { createUI } from './ui/ui.js';
 import { formatNumber } from './core/format.js';
 
+const gemWord = (n) => `${n} ${n === 1 ? 'gem' : 'gems'}`;
 const saves = createSaveManager();
 const debug = new URLSearchParams(location.search).has('debug');
 
@@ -24,11 +29,16 @@ refreshQuests(game.state);
 let sinceSave = 0;
 let sinceWingCheck = 0;
 let ui;
+const audio = createAudio(() => game.state.settings);
 
 /** New day? Unlock achievements. Safe to call often. */
 function checkMeta() {
   if (refreshQuests(game.state)) ui.toast('New daily quests');
-  for (const a of checkAchievements(game.state)) ui.toast(`Achievement: ${a.name} (+${a.gems} gems)`);
+  for (const a of checkAchievements(game.state)) {
+    ui.toast(`Achievement: ${a.name} (+${gemWord(a.gems)})`);
+    ui.feedback('achievement');
+  }
+  advanceTutorial(game.state);
 }
 
 /** Credit time spent away and tell the player about it. */
@@ -43,13 +53,13 @@ function settleAway(seconds) {
 
 const actions = {
   tap(id) {
-    if (startCycle(game.state, id)) track(game.state, 'taps');
+    if (startCycle(game.state, id)) { track(game.state, 'taps'); ui.feedback('tap', id); }
     checkMeta();
     ui.render();
   },
   buy(id) {
     const { bought } = buyMachine(game.state, id, game.state.settings.buyMode);
-    if (bought) { track(game.state, 'levels', bought); saves.save(game.state); }
+    if (bought) { track(game.state, 'levels', bought); saves.save(game.state); ui.feedback('buy', id); }
     checkMeta();
     ui.render();
   },
@@ -57,6 +67,7 @@ const actions = {
     if (buyAuto(game.state, id)) {
       saves.save(game.state);
       ui.toast('Automated');
+      ui.feedback('auto', id);
     }
     checkMeta();
     ui.render();
@@ -65,14 +76,15 @@ const actions = {
     const r = claimDaily(game.state);
     if (r) {
       saves.save(game.state);
-      ui.toast(`Day ${r.streak}: +${formatNumber(r.coins)} coins${r.gems ? ` and ${r.gems} gems` : ''}`);
+      ui.feedback('claim');
+      ui.toast(`Day ${r.streak}: +${formatNumber(r.coins)} coins${r.gems ? ` and ${gemWord(r.gems)}` : ''}`);
     }
     checkMeta();
     ui.render();
   },
   claimQuest(i) {
     const gems = claimQuest(game.state, i);
-    if (gems) { saves.save(game.state); ui.toast(`+${gems} gems`); }
+    if (gems) { saves.save(game.state); ui.toast(`+${gemWord(gems)}`); ui.feedback('gem'); }
     checkMeta();
     ui.render();
   },
@@ -80,9 +92,45 @@ const actions = {
     if (buyGemItem(game.state, id)) {
       saves.save(game.state);
       ui.toast(`${GEM_SHOP_BY_ID[id].name} bought`);
+      ui.feedback('buy');
     }
     checkMeta();
     ui.render();
+  },
+  // ---- Part 7: settings + tutorial ----
+  setSetting(key, value) {
+    if (!(key in TOGGLE_SETTINGS)) return;
+    game.state.settings[key] = !!value;
+    audio.unlock();
+    audio.sync();
+    saves.save(game.state);
+    ui.render();
+  },
+  toggleMute() {
+    game.state.settings.muted = !game.state.settings.muted;
+    audio.unlock();
+    audio.sync();
+    saves.save(game.state);
+    ui.render();
+  },
+  tutorialNext() {
+    nextStep(game.state);
+    saves.save(game.state);
+    ui.render();
+  },
+  tutorialSkip() {
+    skipTutorial(game.state);
+    saves.save(game.state);
+    ui.render();
+  },
+  tutorialReplay() {
+    replayTutorial(game.state);
+    saves.save(game.state);
+    ui.render();
+    ui.toast('Tutorial restarted');
+  },
+  visitTab(id) {
+    visitTab(game.state, id);
   },
   setBuyMode(mode) {
     game.state.settings.buyMode = mode;
@@ -100,6 +148,7 @@ const actions = {
     if (!ok) return;
     doPrestige(game.state);
     saves.save(game.state);
+    ui.feedback('prestige');
     ui.render();
     ui.toast(`Hired ${formatNumber(n)} ${n === 1 ? 'manager' : 'managers'}`);
   },
@@ -158,7 +207,15 @@ const actions = {
   },
 };
 
-ui = createUI(document.getElementById('app'), game, actions, { debug });
+ui = createUI(document.getElementById('app'), game, actions, { debug, audio });
+
+// Browsers only allow sound after a tap or key press.
+const unlockAudio = () => {
+  if (audio.unlock()) {
+    for (const ev of ['pointerdown', 'keydown']) window.removeEventListener(ev, unlockAudio, true);
+  }
+};
+for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, unlockAudio, true);
 
 // Time since the game was last open.
 settleAway((Date.now() - game.state.lastSaved) / 1000);
@@ -181,7 +238,7 @@ const loop = new Loop({
     sinceWingCheck += dt;
     if (sinceWingCheck >= 0.5) {
       sinceWingCheck = 0;
-      for (const w of checkWingUnlocks(game.state)) ui.toast(`${w.name} is open!`);
+      for (const w of checkWingUnlocks(game.state)) { ui.toast(`${w.name} is open!`); ui.feedback('wing'); }
       checkMeta();
     }
 
@@ -196,6 +253,7 @@ const loop = new Loop({
 
 // Leaving: save. Coming back: credit the time away.
 document.addEventListener('visibilitychange', () => {
+  audio.setHidden(document.hidden);
   if (document.hidden) {
     saves.save(game.state);
   } else {

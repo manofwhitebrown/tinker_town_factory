@@ -1,0 +1,89 @@
+apply plugin: 'com.android.application'
+
+// ---- Signing + versioning (Part 8) -------------------------------------------------
+// Release signing reads these, in this order:
+//   1. environment variables  KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD  (GitHub Actions)
+//   2. android/keystore.properties  (storeFile, storePassword, keyAlias, keyPassword)  (your own computer)
+// If neither exists the release build is simply unsigned. See docs/ANDROID.md.
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('keystore.properties')
+if (keystoreFile.exists()) {
+    keystoreFile.withInputStream { keystoreProps.load(it) }
+}
+def signingValue = { String envName, String propName -> System.getenv(envName) ?: keystoreProps.getProperty(propName) }
+
+// CI passes VERSION_CODE (must go up every release) and VERSION_NAME (e.g. 1.2.0).
+def appVersionCode = (System.getenv('VERSION_CODE') ?: '1').toInteger()
+def appVersionName = System.getenv('VERSION_NAME') ?: '0.5.0'
+
+android {
+    namespace = "com.tinkertown.factory"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.tinkertown.factory"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode appVersionCode
+        versionName appVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            def path = signingValue('KEYSTORE_PATH', 'storeFile')
+            if (path) {
+                storeFile file(path)
+                storePassword signingValue('KEYSTORE_PASSWORD', 'storePassword')
+                keyAlias signingValue('KEY_ALIAS', 'keyAlias')
+                keyPassword signingValue('KEY_PASSWORD', 'keyPassword')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            // Lets the debug and release builds live side by side on one phone.
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+        release {
+            if (signingConfigs.release.storeFile) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
