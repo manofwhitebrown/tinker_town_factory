@@ -2,7 +2,9 @@
 
 A cozy, endless idle factory game. Built as plain HTML5 + JavaScript (Vite), wrapped into an Android APK with Capacitor in Part 8.
 
-**Status: all parts done (0-8).** Scaffold, engine, economy, automation + offline income, prestige, factory wings, daily rewards / quests / achievements / gems, polish + sound + accessibility + tutorial, Android packaging + CI.
+**Status: all parts done (0-9).** Scaffold, engine, economy, automation + offline income, prestige, factory wings, daily rewards / quests / achievements / gems, polish + sound + accessibility + tutorial, Android packaging + CI, and Part 9 (more wings, in-game Guide, favicon, password-locked cheats).
+
+Created by **Mohammed Abdul Nayeem**.
 
 ## Run it
 
@@ -15,7 +17,7 @@ npm test           # unit tests (economy, saving, number formatting, game loop)
 npm run build      # production build into dist/
 ```
 
-Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat buttons (+1K ... +1T) and `window.game` in the console.
+**Cheats:** open the Settings tab, scroll to the bottom and type the cheat password in the Cheats box. The cheat buttons (add coins, gems, managers, open all wings, automate all, skip time) then appear, and stay unlocked on that device until you press Lock cheats. Only a hash of the password is stored in `src/systems/cheats.js`; to change the password, put the new hash from `hashText('tinker-town:' + yourPassword)` into `CHEAT_HASH`. Adding `?debug=1` to the URL only exposes `window.game` in the console.
 
 ## Play it / get the APK
 
@@ -28,12 +30,13 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 - Spend coins to level machines up. Pick **x1 / x10 / Max** for how many levels to buy at once.
 - **Automate** a machine (button under its card) and it runs forever by itself.
 - Machines **keep earning while you are away** (up to 8 hours). You get a "Welcome back" summary.
-- Every 10/25/50/100... levels a machine's output doubles.
+- Every 10/25/50/100... levels (up to 900) a machine's output doubles.
 - **Managers tab:** once you have earned 1M coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
-- **Wings:** Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa). Each is a bigger tier of the same coin pool.
-- **Rewards tab:** a daily reward on a 7-day streak (miss a day and it resets), three daily quests that change at local midnight, and 22 achievements. They all pay **gems** (◆).
+- **Wings:** 7 of them, 36 machines in total. Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa), Clockwork Tower (40Sx), Sky Dock (8Oc) and Star Observatory (1.7Dc). Each is a bigger tier of the same coin pool.
+- **Guide tab:** a plain-language page explaining every feature (machines, Automate, offline income, wings, managers and their upgrades, rewards, shop, settings, saving). Its numbers are read from `src/data/`, so it stays correct when you rebalance.
+- **Rewards tab:** a daily reward on a 7-day streak (miss a day and it resets), three daily quests that change at local midnight, and 27 achievements. They all pay **gems** (◆).
 - **Shop tab:** spend gems on a Coin Crate (1 hour of income), Double Time (2x income for 15 min, pauses while the game is closed), and permanent Gem Polish (+5% income per level) and Bigger Vault (+1h offline time per level).
-- **Settings tab:** mute button (also in the header), sound effects, music (all generated in code), Large text, Colorblind-friendly colors, Reduce motion, and Replay tutorial. A short tutorial guides your first minutes.
+- **Settings tab** (also holds the password-locked Cheats box and the credit): mute button (also in the header), sound effects, music (all generated in code), Large text, Colorblind-friendly colors, Reduce motion, and Replay tutorial. A short tutorial guides your first minutes.
 - Progress autosaves every 10 seconds and when you leave the page.
 
 ## Project layout
@@ -41,12 +44,13 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 ```
 src/
   core/      state.js (state shape + repair), save.js (versioned saves), loop.js (fixed timestep), format.js (1.2K, 3.4M)
-  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js, meta.js (daily, quests, achievements, gem shop)
+  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js, meta.js (daily, quests, achievements, gem shop), cheats.js (password lock)
   data/      config.js (global knobs), machines.js (wings + every machine's numbers), prestige.js (manager tuning), meta.js (rewards, quests, achievements, gem shop)
-  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, rewardsView.js, shopView.js, moreView.js, icons.js (SVG), styles.css, dom.js
+  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, rewardsView.js, shopView.js, guideView.js, moreView.js, icons.js (SVG), styles.css, dom.js
   main.js    wires it all together
 tests/       node:test unit tests
 tools/simulate.js   balancing bot: `node tools/simulate.js` prints how long milestones take
+public/     favicon (svg, png, ico) and apple-touch icon
 capacitor.config.json   stub, used in Part 8
 .github/workflows/ci.yml   runs tests + build on every push
 ```
@@ -70,7 +74,8 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version
 
 ## Known limits (by design, for now)
 
-- Numbers are standard JS doubles (max about 1e308). Plenty for this game; the formatter switches to `1e40` style past 1e36.
+- Numbers are standard JS doubles (max about 1e308). Plenty for this game; the formatter switches to `1e40` style past 1e36 (the last wing's machines are in that range).
+- The cheat password is client-side, so it keeps casual players out but is not real security.
 - Offline earnings trust the device clock.
 - Daily rewards and quests trust the device clock (like offline earnings). Sound, settings, tutorial and accessibility options arrive in Part 7.
 
@@ -87,6 +92,7 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version
 | 6 | Daily rewards, quests, achievements, gems | done |
 | 7 | Polish, sound, accessibility, tutorial | done |
 | 8 | Android packaging + APK via GitHub Actions | done |
+| 9 | 3 more wings (36 machines), Guide tab, favicon, credit, password-locked cheats | done |
 
 ## Pushing to GitHub
 

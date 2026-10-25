@@ -8,6 +8,7 @@ import { currentStep, tutorialActive } from '../systems/tutorial.js';
 import { h, setText, setAttr } from './dom.js';
 import { createFx } from './fx.js';
 import { createFactoryView } from './factoryView.js';
+import { createGuideView } from './guideView.js';
 import { createManagersView } from './managersView.js';
 import { createMoreView } from './moreView.js';
 import { createRewardsView } from './rewardsView.js';
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'managers', label: 'Managers' },
   { id: 'rewards', label: 'Rewards' },
   { id: 'shop', label: 'Shop' },
+  { id: 'guide', label: 'Guide' },
   { id: 'more', label: 'Settings' },
 ];
 
@@ -69,7 +71,8 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
       managers: createManagersView({ game, actions }),
       rewards: createRewardsView({ game, actions }),
       shop: createShopView({ game, actions }),
-      more: createMoreView({ game, actions, debug }),
+      guide: createGuideView(),
+      more: createMoreView({ game, actions }),
     };
 
     coinsEl = h('div', { class: 'coins' }, '0');

@@ -26,6 +26,8 @@ test('goal moves on as wings open, and ends when everything is open', () => {
   s.wings.toys = true;
   assert.equal(nextGoal(s).label, 'Open the Gadget Garage');
   s.wings.gadgets = true; s.wings.candy = true;
+  assert.equal(nextGoal(s).label, 'Open the Clockwork Tower');
+  s.wings.clock = true; s.wings.sky = true; s.wings.star = true;
   assert.equal(nextGoal(s), null);
 });
 
@@ -33,6 +35,8 @@ test('no "first manager" goal once a manager can be hired', () => {
   const s = createInitialState();
   s.runCoins = 2e6; s.lifetimeCoins = 2e6;
   s.wings.toys = true; s.wings.gadgets = true; s.wings.candy = true;
+  assert.equal(nextGoal(s).label, 'Open the Clockwork Tower');
+  s.wings.clock = true; s.wings.sky = true; s.wings.star = true;
   assert.equal(nextGoal(s), null);
 });
 

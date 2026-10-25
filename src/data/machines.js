@@ -16,6 +16,9 @@ export const WINGS = [
   { id: 'toys', name: 'Toy Shop', short: 'Toys', unlockAt: 5e6, paper: '#e1efe8' },
   { id: 'gadgets', name: 'Gadget Garage', short: 'Gadgets', unlockAt: 1e12, paper: '#e8e6f2' },
   { id: 'candy', name: 'Candy Kitchen', short: 'Candy', unlockAt: 2e17, paper: '#f4e4ea' },
+  { id: 'clock', name: 'Clockwork Tower', short: 'Clocks', unlockAt: 4e22, paper: '#e9efdc' },
+  { id: 'sky', name: 'Sky Dock', short: 'Sky', unlockAt: 8e27, paper: '#dcf0f3' },
+  { id: 'star', name: 'Star Observatory', short: 'Stars', unlockAt: 1.7e33, paper: '#f7efd0' },
 ];
 
 const machine = (def) => ({ autoCost: Math.round(def.baseCost * 5), ...def });
@@ -46,6 +49,24 @@ export const MACHINES = [
   machine({ id: 'taffy', wing: 'candy', name: 'Taffy Puller', icon: 'candy', color: '#7b4fc9', baseCost: 8.9e19, baseOutput: 2.1e17, cycleTime: 55 }),
   machine({ id: 'chocolate', wing: 'candy', name: 'Chocolate Fall', icon: 'chocolate', color: '#6b3e26', baseCost: 1e21, baseOutput: 2e18, cycleTime: 60 }),
   machine({ id: 'cakeworks', wing: 'candy', name: 'Grand Cake Works', icon: 'cake', color: '#d94f70', baseCost: 1.2e22, baseOutput: 1.8e19, cycleTime: 70 }),
+  // ---- clock ----
+  machine({ id: 'cuckoo', wing: 'clock', name: 'Cuckoo Carver', icon: 'cuckoo', color: '#8a5a2b', baseCost: 1.4e23, baseOutput: 1.6e20, cycleTime: 80 }),
+  machine({ id: 'springcoil', wing: 'clock', name: 'Spring Coiler', icon: 'spring', color: '#2c7fb8', baseCost: 1.6e24, baseOutput: 1.5e21, cycleTime: 90 }),
+  machine({ id: 'pocketwatch', wing: 'clock', name: 'Pocket Watch Press', icon: 'watch', color: '#a67c00', baseCost: 1.8e25, baseOutput: 1.4e22, cycleTime: 100 }),
+  machine({ id: 'chimeforge', wing: 'clock', name: 'Chime Forge', icon: 'bell', color: '#a23b72', baseCost: 2.1e26, baseOutput: 1.3e23, cycleTime: 110 }),
+  machine({ id: 'clocktower', wing: 'clock', name: 'Grand Clock Tower', icon: 'tower', color: '#3a6b4f', baseCost: 2.4e27, baseOutput: 1.2e24, cycleTime: 120 }),
+  // ---- sky ----
+  machine({ id: 'kite', wing: 'sky', name: 'Kite Stitcher', icon: 'kite', color: '#d1495b', baseCost: 2.8e28, baseOutput: 1.1e25, cycleTime: 130 }),
+  machine({ id: 'balloon', wing: 'sky', name: 'Balloon Filler', icon: 'balloon', color: '#00798c', baseCost: 3.2e29, baseOutput: 1e26, cycleTime: 140 }),
+  machine({ id: 'propeller', wing: 'sky', name: 'Propeller Shop', icon: 'propeller', color: '#b36b00', baseCost: 3.7e30, baseOutput: 9.3e26, cycleTime: 150 }),
+  machine({ id: 'zeppelin', wing: 'sky', name: 'Zeppelin Dock', icon: 'zeppelin', color: '#30638e', baseCost: 4.3e31, baseOutput: 8.6e27, cycleTime: 160 }),
+  machine({ id: 'cloudharbor', wing: 'sky', name: 'Cloud Harbor', icon: 'cloud', color: '#5c6bc0', baseCost: 5e32, baseOutput: 8e28, cycleTime: 170 }),
+  // ---- star ----
+  machine({ id: 'lens', wing: 'star', name: 'Lens Grinder', icon: 'lens', color: '#3d5a80', baseCost: 5.8e33, baseOutput: 7.4e29, cycleTime: 180 }),
+  machine({ id: 'stardust', wing: 'star', name: 'Stardust Sifter', icon: 'stardust', color: '#9c4f96', baseCost: 6.7e34, baseOutput: 6.9e30, cycleTime: 190 }),
+  machine({ id: 'cometforge', wing: 'star', name: 'Comet Forge', icon: 'comet', color: '#d4472a', baseCost: 7.8e35, baseOutput: 6.4e31, cycleTime: 200 }),
+  machine({ id: 'mooncart', wing: 'star', name: 'Moon Cart Works', icon: 'moon', color: '#4a6fa5', baseCost: 9e36, baseOutput: 5.9e32, cycleTime: 210 }),
+  machine({ id: 'galaxyloom', wing: 'star', name: 'Galaxy Loom', icon: 'galaxy', color: '#7a3e9d', baseCost: 1e38, baseOutput: 5.4e33, cycleTime: 220 }),
 ];
 
 export const MACHINE_BY_ID = Object.fromEntries(MACHINES.map((m) => [m.id, m]));

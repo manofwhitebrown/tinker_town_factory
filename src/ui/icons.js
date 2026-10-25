@@ -156,6 +156,106 @@ export const ICONS = {
     <rect x="22.7" y="8" width="2.6" height="8" fill="currentColor"/>
     <path d="M24 2c2.2 2 2.2 4 0 5.5-2.2-1.5-2.2-3.5 0-5.5z" fill="currentColor"/>`),
 
+  // ---- Clockwork Tower ----
+  cuckoo: wrap(`
+    <path d="M24 3L6 18h36z" fill="currentColor"/>
+    <rect x="9" y="18" width="30" height="23" rx="3" fill="currentColor" opacity=".9"/>
+    <circle cx="24" cy="29" r="8" fill="#fff"/>
+    <path d="M24 23v6l4 2" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <rect x="20" y="41" width="8" height="5" rx="2" fill="currentColor"/>`),
+
+  spring: wrap(`
+    <rect x="8" y="5" width="32" height="5" rx="2.5" fill="currentColor"/>
+    <rect x="8" y="38" width="32" height="5" rx="2.5" fill="currentColor"/>
+    <path d="M12 13h24M12 20h24M12 27h24M12 34h24" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M14 16.5l20 3.5M14 23.5l20 3.5M14 30.5l20 3.5" stroke="#fff" stroke-width="2" opacity=".8" stroke-linecap="round"/>`),
+
+  watch: wrap(`
+    <rect x="20" y="3" width="8" height="6" rx="2" fill="currentColor"/>
+    <circle cx="24" cy="27" r="17" fill="currentColor"/>
+    <circle cx="24" cy="27" r="12.5" fill="#fff"/>
+    <path d="M24 18v9l6 3.5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="24" cy="27" r="1.8" fill="currentColor"/>`),
+
+  bell: wrap(`
+    <path d="M24 5c-8 0-13 6-13 15v8l-5 5v3h36v-3l-5-5v-8c0-9-5-15-13-15z" fill="currentColor"/>
+    <path d="M17 18c1-4 4-6 7-6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/>
+    <circle cx="24" cy="41" r="4" fill="currentColor"/>`),
+
+  tower: wrap(`
+    <path d="M24 2l9 10H15z" fill="currentColor"/>
+    <rect x="15" y="12" width="18" height="30" fill="currentColor" opacity=".9"/>
+    <circle cx="24" cy="22" r="6" fill="#fff"/>
+    <path d="M24 18v4.5l3 1.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <rect x="21" y="31" width="6" height="11" rx="3" fill="#fff" opacity=".85"/>
+    <rect x="10" y="42" width="28" height="4" rx="2" fill="currentColor"/>`),
+
+  // ---- Sky Dock ----
+  kite: wrap(`
+    <path d="M28 3l13 14-13 16L15 17z" fill="currentColor"/>
+    <path d="M28 3v30M15 17h26" stroke="#fff" stroke-width="2" opacity=".8"/>
+    <path d="M28 33c-3 5 3 7-1 12" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M24.5 38l5 2" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`),
+
+  balloon: wrap(`
+    <path d="M24 3c-9 0-15 7-15 15 0 9 8 15 15 19 7-4 15-10 15-19 0-8-6-15-15-15z" fill="currentColor"/>
+    <path d="M16 12c2-3 5-5 9-5" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".75"/>
+    <path d="M20 37h8l-1.5 4h-5z" fill="currentColor"/>
+    <path d="M24 41v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>`),
+
+  propeller: wrap(`
+    <ellipse cx="24" cy="12" rx="5" ry="10" fill="currentColor"/>
+    <ellipse cx="24" cy="36" rx="5" ry="10" fill="currentColor"/>
+    <ellipse cx="12" cy="24" rx="10" ry="5" fill="currentColor" opacity=".85"/>
+    <ellipse cx="36" cy="24" rx="10" ry="5" fill="currentColor" opacity=".85"/>
+    <circle cx="24" cy="24" r="6" fill="#fff"/>
+    <circle cx="24" cy="24" r="2.6" fill="currentColor"/>`),
+
+  zeppelin: wrap(`
+    <ellipse cx="24" cy="20" rx="20" ry="11" fill="currentColor"/>
+    <path d="M9 17c5-4 24-4 30 0" stroke="#fff" stroke-width="2.2" fill="none" opacity=".75" stroke-linecap="round"/>
+    <path d="M6 14l-4-5v10zM42 14l4-5v10z" fill="currentColor"/>
+    <rect x="17" y="32" width="14" height="7" rx="3" fill="currentColor"/>
+    <path d="M20 31v2M28 31v2" stroke="currentColor" stroke-width="2.4"/>`),
+
+  cloud: wrap(`
+    <path d="M13 38a9 9 0 0 1-1-17.9A12 12 0 0 1 35 17a10 10 0 0 1 1 21z" fill="currentColor"/>
+    <path d="M16 24a7 7 0 0 1 9-5" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".75"/>
+    <path d="M10 43h28" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 5"/>`),
+
+  // ---- Star Observatory ----
+  lens: wrap(`
+    <circle cx="20" cy="20" r="14" fill="#fff" stroke="currentColor" stroke-width="5"/>
+    <path d="M12 17c1-3 4-5 7-5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".6"/>
+    <path d="M31 31l12 12" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>`),
+
+  stardust: wrap(`
+    <path d="M22 4l4.5 11 11.5 1-8.8 7.6L32 35l-10-6.2L12 35l2.8-11.4L6 16l11.5-1z" fill="currentColor"/>
+    <circle cx="39" cy="9" r="2.8" fill="currentColor"/>
+    <circle cx="40" cy="38" r="2" fill="currentColor" opacity=".8"/>
+    <circle cx="9" cy="41" r="2.4" fill="currentColor" opacity=".8"/>
+    <circle cx="23" cy="43" r="1.4" fill="currentColor" opacity=".7"/>`),
+
+  comet: wrap(`
+    <path d="M6 42C14 34 22 28 31 19" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity=".35"/>
+    <path d="M6 30c8-5 14-9 21-15" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <circle cx="33" cy="15" r="10" fill="currentColor"/>
+    <circle cx="30" cy="12" r="3" fill="#fff" opacity=".75"/>`),
+
+  moon: wrap(`
+    <path d="M30 5A19 19 0 1 0 43 32 15 15 0 0 1 30 5z" fill="currentColor"/>
+    <circle cx="18" cy="27" r="3" fill="#fff" opacity=".6"/>
+    <circle cx="25" cy="36" r="2" fill="#fff" opacity=".6"/>
+    <path d="M38 8l1.4 3.2 3.2 1.4-3.2 1.4L38 17.2l-1.4-3.2-3.2-1.4 3.2-1.4z" fill="currentColor"/>`),
+
+  galaxy: wrap(`
+    <path d="M24 24c-3-9 4-17 15-15" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M24 24c3 9-4 17-15 15" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M24 24c9-3 17 4 15 15" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" opacity=".5"/>
+    <path d="M24 24c-9 3-17-4-15-15" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" opacity=".5"/>
+    <circle cx="24" cy="24" r="6" fill="currentColor"/>
+    <circle cx="24" cy="24" r="2.4" fill="#fff"/>`),
+
   lock: wrap(`
     <rect x="11" y="21" width="26" height="20" rx="4" fill="currentColor"/>
     <path d="M16 21v-5a8 8 0 0 1 16 0v5" fill="none" stroke="currentColor" stroke-width="4"/>

@@ -60,3 +60,33 @@ test('every machine has an icon and a sensible autoCost', async () => {
     assert.ok(m.autoCost > m.baseCost, m.id);
   }
 });
+
+test('there are 7 wings and 36 machines, each wing has 5 or 6 machines', () => {
+  assert.equal(WINGS.length, 7);
+  assert.equal(MACHINES.length, 36);
+  for (const w of WINGS) {
+    const n = MACHINES.filter((m) => m.wing === w.id).length;
+    assert.ok(n === 5 || n === 6, `${w.id} has ${n}`);
+  }
+});
+
+test('later wings open before their first machine becomes affordable to a beginner, and costs always rise', () => {
+  for (let i = 1; i < MACHINES.length; i++) {
+    assert.ok(MACHINES[i].baseCost > MACHINES[i - 1].baseCost, `${MACHINES[i].id} costs more than ${MACHINES[i - 1].id}`);
+    assert.ok(MACHINES[i].baseOutput > MACHINES[i - 1].baseOutput, `${MACHINES[i].id} earns more than ${MACHINES[i - 1].id}`);
+  }
+  for (const w of WINGS.slice(1)) {
+    const first = MACHINES.find((m) => m.wing === w.id);
+    assert.ok(w.unlockAt < first.baseCost, `${w.id} opens before its first machine is affordable`);
+  }
+});
+
+test('all ids are unique and the new wings unlock in order', () => {
+  assert.equal(new Set(MACHINES.map((m) => m.id)).size, MACHINES.length);
+  assert.equal(new Set(WINGS.map((w) => w.id)).size, WINGS.length);
+  const s = createInitialState();
+  addCoins(s, 1e30);
+  assert.deepEqual(checkWingUnlocks(s).map((w) => w.id), ['toys', 'gadgets', 'candy', 'clock', 'sky']);
+  addCoins(s, 1e34);
+  assert.deepEqual(checkWingUnlocks(s).map((w) => w.id), ['star']);
+});

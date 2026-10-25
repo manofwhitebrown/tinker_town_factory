@@ -9,6 +9,8 @@ import {
 import { applyOffline } from './systems/offline.js';
 import { buyUpgrade, doPrestige, pendingPoints } from './systems/prestige.js';
 import { checkWingUnlocks } from './systems/wings.js';
+import { createCheatLock } from './systems/cheats.js';
+import { MACHINES, WINGS } from './data/machines.js';
 import {
   buyGemItem, checkAchievements, claimDaily, claimQuest, refreshQuests, track,
 } from './systems/meta.js';
@@ -22,6 +24,7 @@ import { formatNumber } from './core/format.js';
 
 const gemWord = (n) => `${n} ${n === 1 ? 'gem' : 'gems'}`;
 const saves = createSaveManager();
+const cheatLock = createCheatLock();
 const debug = new URLSearchParams(location.search).has('debug');
 
 const game = { state: saves.load() || createInitialState() };
@@ -189,24 +192,60 @@ const actions = {
     ui.rebuild();
     ui.toast('Fresh start');
   },
-  // ---- debug-only (?debug=1) ----
+  // ---- cheats: only work after the password is entered in Settings ----
+  cheatsUnlocked() {
+    return cheatLock.isOpen();
+  },
+  unlockCheats(password) {
+    if (cheatLock.tryUnlock(password)) {
+      ui.toast('Cheats unlocked');
+      ui.render();
+      return true;
+    }
+    ui.toast('Wrong password');
+    return false;
+  },
+  lockCheats() {
+    cheatLock.lock();
+    ui.toast('Cheats locked');
+    ui.render();
+  },
   cheat(amount) {
+    if (!cheatLock.isOpen()) return;
     addCoins(game.state, amount);
     checkWingUnlocks(game.state);
     ui.render();
   },
   cheatAway(seconds) {
+    if (!cheatLock.isOpen()) return;
     settleAway(seconds);
     ui.render();
   },
   cheatGems(n) {
+    if (!cheatLock.isOpen()) return;
     game.state.gems += n;
     ui.render();
   },
   cheatPoints(n) {
+    if (!cheatLock.isOpen()) return;
     game.state.prestige.points += n;
     game.state.prestige.totalPoints += n;
     ui.render();
+  },
+  cheatWings() {
+    if (!cheatLock.isOpen()) return;
+    for (const w of WINGS) game.state.wings[w.id] = true;
+    ui.render();
+    ui.toast('All wings open');
+  },
+  cheatAutomate() {
+    if (!cheatLock.isOpen()) return;
+    for (const def of MACHINES) {
+      const m = game.state.machines[def.id];
+      if (m.level >= 1) m.auto = true;
+    }
+    ui.render();
+    ui.toast('Every machine you own is automated');
   },
 };
 
@@ -271,4 +310,4 @@ window.addEventListener('pagehide', () => saves.save(game.state));
 
 loop.start();
 
-if (debug) window.game = game; // poke at state from the console: game.state
+if (debug) window.game = game; // poke at state from the console: game.state (cheat buttons need the password)
