@@ -9,6 +9,10 @@ import {
 import { applyOffline } from './systems/offline.js';
 import { buyUpgrade, doPrestige, pendingPoints } from './systems/prestige.js';
 import { checkWingUnlocks } from './systems/wings.js';
+import {
+  buyGemItem, checkAchievements, claimDaily, claimQuest, refreshQuests, track,
+} from './systems/meta.js';
+import { GEM_SHOP_BY_ID } from './data/meta.js';
 import { createUI } from './ui/ui.js';
 import { formatNumber } from './core/format.js';
 
@@ -16,9 +20,16 @@ const saves = createSaveManager();
 const debug = new URLSearchParams(location.search).has('debug');
 
 const game = { state: saves.load() || createInitialState() };
+refreshQuests(game.state);
 let sinceSave = 0;
 let sinceWingCheck = 0;
 let ui;
+
+/** New day? Unlock achievements. Safe to call often. */
+function checkMeta() {
+  if (refreshQuests(game.state)) ui.toast('New daily quests');
+  for (const a of checkAchievements(game.state)) ui.toast(`Achievement: ${a.name} (+${a.gems} gems)`);
+}
 
 /** Credit time spent away and tell the player about it. */
 function settleAway(seconds) {
@@ -32,12 +43,14 @@ function settleAway(seconds) {
 
 const actions = {
   tap(id) {
-    startCycle(game.state, id);
+    if (startCycle(game.state, id)) track(game.state, 'taps');
+    checkMeta();
     ui.render();
   },
   buy(id) {
     const { bought } = buyMachine(game.state, id, game.state.settings.buyMode);
-    if (bought) saves.save(game.state);
+    if (bought) { track(game.state, 'levels', bought); saves.save(game.state); }
+    checkMeta();
     ui.render();
   },
   buyAuto(id) {
@@ -45,6 +58,30 @@ const actions = {
       saves.save(game.state);
       ui.toast('Automated');
     }
+    checkMeta();
+    ui.render();
+  },
+  claimDaily() {
+    const r = claimDaily(game.state);
+    if (r) {
+      saves.save(game.state);
+      ui.toast(`Day ${r.streak}: +${formatNumber(r.coins)} coins${r.gems ? ` and ${r.gems} gems` : ''}`);
+    }
+    checkMeta();
+    ui.render();
+  },
+  claimQuest(i) {
+    const gems = claimQuest(game.state, i);
+    if (gems) { saves.save(game.state); ui.toast(`+${gems} gems`); }
+    checkMeta();
+    ui.render();
+  },
+  buyGem(id) {
+    if (buyGemItem(game.state, id)) {
+      saves.save(game.state);
+      ui.toast(`${GEM_SHOP_BY_ID[id].name} bought`);
+    }
+    checkMeta();
     ui.render();
   },
   setBuyMode(mode) {
@@ -85,6 +122,7 @@ const actions = {
     try {
       game.state = saves.importString(code);
       saves.save(game.state);
+      refreshQuests(game.state);
       ui.rebuild();
       ui.toast('Save loaded');
     } catch (err) {
@@ -95,6 +133,7 @@ const actions = {
     if (!window.confirm('Erase all progress and start over?')) return;
     saves.wipe();
     game.state = createInitialState();
+    refreshQuests(game.state);
     ui.rebuild();
     ui.toast('Fresh start');
   },
@@ -108,6 +147,10 @@ const actions = {
     settleAway(seconds);
     ui.render();
   },
+  cheatGems(n) {
+    game.state.gems += n;
+    ui.render();
+  },
   cheatPoints(n) {
     game.state.prestige.points += n;
     game.state.prestige.totalPoints += n;
@@ -119,6 +162,7 @@ ui = createUI(document.getElementById('app'), game, actions, { debug });
 
 // Time since the game was last open.
 settleAway((Date.now() - game.state.lastSaved) / 1000);
+checkMeta();
 saves.save(game.state);
 ui.render();
 
@@ -126,13 +170,19 @@ const loop = new Loop({
   step: 1 / CONFIG.tickRate,
   maxFrame: CONFIG.maxFrameSeconds,
   update(dt) {
-    updateEconomy(game.state, dt, ui.onProduce);
+    const before = game.state.lifetimeCoins;
+    updateEconomy(game.state, dt, (id, amount) => {
+      track(game.state, 'cycles');
+      ui.onProduce(id, amount);
+    });
+    track(game.state, 'earn', game.state.lifetimeCoins - before);
     game.state.stats.playSeconds += dt;
 
     sinceWingCheck += dt;
     if (sinceWingCheck >= 0.5) {
       sinceWingCheck = 0;
       for (const w of checkWingUnlocks(game.state)) ui.toast(`${w.name} is open!`);
+      checkMeta();
     }
 
     sinceSave += dt;
@@ -150,6 +200,7 @@ document.addEventListener('visibilitychange', () => {
     saves.save(game.state);
   } else {
     settleAway((Date.now() - game.state.lastSaved) / 1000);
+    checkMeta();
     saves.save(game.state);
     loop.resetClock();
     ui.render();

@@ -1,3 +1,4 @@
+import { CONFIG } from '../src/data/config.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, hydrate } from '../src/core/state.js';
@@ -98,7 +99,7 @@ test('newer saves are rejected', () => {
 });
 
 test('serialize includes version', () => {
-  assert.equal(JSON.parse(serialize(createInitialState())).v, 2);
+  assert.equal(JSON.parse(serialize(createInitialState())).v, CONFIG.saveVersion);
 });
 
 test('real v1 save migrates to v2 and keeps progress', () => {
@@ -107,7 +108,7 @@ test('real v1 save migrates to v2 and keeps progress', () => {
     data: { coins: 10, lifetimeCoins: 5000, machines: { sewing: { level: 12 }, loom: { level: 3 } } },
   });
   const s = deserialize(v1); // uses the real MIGRATIONS table
-  assert.equal(s.version, 2);
+  assert.equal(s.version, CONFIG.saveVersion);
   assert.equal(s.runCoins, 5000);
   assert.equal(s.machines.sewing.level, 12);
   assert.equal(s.machines.loom.level, 3);

@@ -7,6 +7,9 @@ import { hydrate } from './state.js';
 export const MIGRATIONS = {
   // v1 -> v2 (Part 4): runCoins was added. Treat everything earned so far as this run.
   1: (d) => ({ ...d, runCoins: d.lifetimeCoins ?? d.coins ?? 0 }),
+  // v2 -> v3 (Part 6): gems, daily, quests, achievements, gem shop. hydrate() fills the new
+  // fields with defaults, so nothing needs copying.
+  2: (d) => d,
 };
 
 export function serialize(state) {

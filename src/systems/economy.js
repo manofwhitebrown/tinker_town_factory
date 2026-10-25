@@ -1,6 +1,7 @@
 import { CONFIG } from '../data/config.js';
 import { MACHINES, MACHINE_BY_ID, PREV_IN_WING } from '../data/machines.js';
 import { PRESTIGE, UPGRADES_BY_ID } from '../data/prestige.js';
+import { GEM_SHOP_BY_ID } from '../data/meta.js';
 
 const growth = (def) => def.costGrowth ?? CONFIG.costGrowth;
 
@@ -8,11 +9,17 @@ export function upgradeLevel(state, id) {
   return (state.prestige && state.prestige.upgrades[id]) || 0;
 }
 
-/** Everything that multiplies income: hired managers + Golden Thimble. */
+export function gemShopLevel(state, id) {
+  return (state.gemShop && state.gemShop[id]) || 0;
+}
+
+/** Everything that multiplies income: managers, Golden Thimble, Gem Polish, Double Time. */
 export function getGlobalMultiplier(state) {
   const managers = 1 + PRESTIGE.bonusPerPoint * state.prestige.totalPoints;
   const thimble = 1 + UPGRADES_BY_ID.thimble.perLevel * upgradeLevel(state, 'thimble');
-  return managers * thimble;
+  const polish = 1 + GEM_SHOP_BY_ID.polish.perLevel * gemShopLevel(state, 'polish');
+  const boost = state.buffs && state.buffs.boost > 0 ? 2 : 1;
+  return managers * thimble * polish * boost;
 }
 
 /** Speedy Spools: machines finish cycles faster. */
@@ -26,7 +33,9 @@ export function cycleTimeOf(def, state) {
 
 /** Seconds of offline work that count (Night Shift extends it). */
 export function offlineCapSeconds(state) {
-  return CONFIG.offlineCapSeconds + UPGRADES_BY_ID.nightshift.perLevel * upgradeLevel(state, 'nightshift');
+  return CONFIG.offlineCapSeconds
+    + UPGRADES_BY_ID.nightshift.perLevel * upgradeLevel(state, 'nightshift')
+    + GEM_SHOP_BY_ID.vault.perLevel * gemShopLevel(state, 'vault');
 }
 
 export function milestoneMultiplier(level) {
@@ -142,8 +151,19 @@ export function incomePerSecond(state) {
   return total;
 }
 
+/** Coins per second if every owned machine were running (used to size rewards). */
+export function potentialIncomePerSecond(state) {
+  let total = 0;
+  for (const def of MACHINES) {
+    const m = state.machines[def.id];
+    if (m.level >= 1) total += machineOutput(def, m.level, state) / cycleTimeOf(def, state);
+  }
+  return total;
+}
+
 /** Advance every machine by dt seconds. onProduce(id, amount) fires per finished cycle. */
 export function updateEconomy(state, dt, onProduce) {
+  if (state.buffs.boost > 0) state.buffs.boost = Math.max(0, state.buffs.boost - dt);
   for (const def of MACHINES) {
     const m = state.machines[def.id];
     if (m.level < 1) continue;

@@ -18,6 +18,10 @@ export function applyOffline(state, elapsedSeconds) {
   const result = { seconds: t, rawSeconds: raw, capped: raw > cap, coins: 0 };
   if (t <= 0) return result;
 
+  // Double Time pauses while the game is closed, so it must not inflate away earnings.
+  const savedBoost = state.buffs.boost;
+  state.buffs.boost = 0;
+
   let earned = 0;
   for (const def of MACHINES) {
     const m = state.machines[def.id];
@@ -42,6 +46,8 @@ export function applyOffline(state, elapsedSeconds) {
       }
     }
   }
+
+  state.buffs.boost = savedBoost;
 
   if (earned > 0) {
     addCoins(state, earned);

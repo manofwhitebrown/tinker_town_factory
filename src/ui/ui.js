@@ -2,14 +2,19 @@ import { WING_BY_ID } from '../data/machines.js';
 import { formatNumber, formatDuration } from '../core/format.js';
 import { incomePerSecond } from '../systems/economy.js';
 import { canPrestige } from '../systems/prestige.js';
+import { claimableQuests, dailyStatus } from '../systems/meta.js';
 import { h, setText, setAttr } from './dom.js';
 import { createFactoryView } from './factoryView.js';
 import { createManagersView } from './managersView.js';
 import { createMoreView } from './moreView.js';
+import { createRewardsView } from './rewardsView.js';
+import { createShopView } from './shopView.js';
 
 const TABS = [
   { id: 'factory', label: 'Factory' },
   { id: 'managers', label: 'Managers' },
+  { id: 'rewards', label: 'Rewards' },
+  { id: 'shop', label: 'Shop' },
   { id: 'more', label: 'More' },
 ];
 
@@ -19,7 +24,7 @@ const TABS = [
  */
 export function createUI(root, game, actions, { debug = false } = {}) {
   let tab = 'factory';
-  let app, coinsEl, rateEl, views, navBtns, managersDot, wingShown = '';
+  let app, coinsEl, gemsEl, rateEl, views, navBtns, managersDot, rewardsDot, wingShown = '';
   let toastTimer = 0;
 
   function build() {
@@ -27,24 +32,29 @@ export function createUI(root, game, actions, { debug = false } = {}) {
     views = {
       factory: createFactoryView({ game, actions }),
       managers: createManagersView({ game, actions }),
+      rewards: createRewardsView({ game, actions }),
+      shop: createShopView({ game, actions }),
       more: createMoreView({ game, actions, debug }),
     };
 
     coinsEl = h('div', { class: 'coins' }, '0');
     rateEl = h('div', { class: 'rate', hidden: true });
+    gemsEl = h('div', { class: 'gems', 'aria-label': 'Gems' }, '0 ◆');
     const top = h('header', { class: 'top' },
       h('div', { class: 'brand' }, 'Tinker Town Factory'),
-      h('div', { class: 'coins-row' }, coinsEl, rateEl));
+      h('div', { class: 'coins-row' }, coinsEl, rateEl, gemsEl));
 
     const content = h('div', { class: 'content' });
     for (const t of TABS) { views[t.id].el.hidden = t.id !== tab; content.append(views[t.id].el); }
 
     managersDot = h('i', { class: 'dot', hidden: true });
+    rewardsDot = h('i', { class: 'dot', hidden: true });
     navBtns = {};
     const nav = h('nav', { class: 'nav', 'aria-label': 'Sections' });
     for (const t of TABS) {
       const b = h('button', { type: 'button', class: 'nav-btn', onclick: () => select(t.id) }, t.label);
       if (t.id === 'managers') b.append(managersDot);
+      if (t.id === 'rewards') b.append(rewardsDot);
       navBtns[t.id] = b;
       nav.append(b);
     }
@@ -76,6 +86,8 @@ export function createUI(root, game, actions, { debug = false } = {}) {
 
     for (const t of TABS) setAttr(navBtns[t.id], 'aria-current', t.id === tab ? 'page' : 'false');
     managersDot.hidden = !canPrestige(s);
+    setText(gemsEl, `${s.gems} ◆`);
+    rewardsDot.hidden = !(dailyStatus(s).claimable || claimableQuests(s) > 0);
 
     views[tab].render();
   }

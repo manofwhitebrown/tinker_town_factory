@@ -22,9 +22,10 @@ export function createMoreView({ game, actions, debug }) {
       dev.append(h('button', { class: 'dev', type: 'button', onclick: () => actions.cheatAway(sec) }, label));
     }
     dev.append(h('button', { class: 'dev', type: 'button', onclick: () => actions.cheatPoints(10) }, '+10 managers'));
+    dev.append(h('button', { class: 'dev', type: 'button', onclick: () => actions.cheatGems(20) }, '+20 gems'));
     panels.push(h('section', { class: 'panel' }, h('h2', {}, 'Debug'), dev));
   }
-  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.2 · parts 0–5'));
+  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.3 · parts 0–6'));
 
   const el = h('div', { class: 'view' }, ...panels);
 

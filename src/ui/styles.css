@@ -57,13 +57,14 @@ button { font: inherit; color: inherit; }
   color: var(--coin);
   font-variant-numeric: tabular-nums;
 }
+.gems { margin-left: auto; font-size: 17px; font-weight: 800; color: #9fe3d6; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rate { font-size: 15px; font-weight: 700; color: #cfd9ea; font-variant-numeric: tabular-nums; }
 
 /* ---------- bottom nav ---------- */
 .nav {
   position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 520px; z-index: 10;
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--ink);
   border-top: 3px dashed rgba(255, 255, 255, .22);
   padding-bottom: var(--safe-bottom);
@@ -73,12 +74,12 @@ button { font: inherit; color: inherit; }
   position: relative;
   height: var(--nav-h);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 800; color: #9eaccb; cursor: pointer;
+  font-size: 13px; font-weight: 800; color: #9eaccb; cursor: pointer;
 }
 .nav-btn[aria-current="page"] { color: #fff; box-shadow: inset 0 -4px 0 var(--coin); }
 .nav-btn:focus-visible { outline: 3px solid var(--coin); outline-offset: -3px; }
 .dot {
-  position: absolute; top: 14px; margin-left: 74px;
+  position: absolute; top: 10px; right: 10px;
   width: 10px; height: 10px; border-radius: 50%; background: var(--coin);
 }
 
@@ -269,6 +270,25 @@ button { font: inherit; color: inherit; }
   padding: 10px 16px; border-radius: 999px;
   max-width: 90vw; text-align: center; z-index: 20;
 }
+
+/* ---------- rewards + shop (Part 6) ---------- */
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+.day {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 54px; padding: 4px 0; border: 2px dashed var(--stitch); border-radius: 10px;
+  font-weight: 800; color: var(--muted);
+}
+.day-n { font-size: 10px; }
+.day-p { font-size: 12px; color: var(--ink); }
+.day.today { border-style: solid; border-color: var(--coin-deep); background: #fff4d6; }
+.day.done { background: #dcefe3; border-color: #4c8c3a; }
+.bar { height: 10px; margin: 6px 0 4px; border-radius: 999px; background: #dbe3ee; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--coin-deep); border-radius: 999px; }
+.ach { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 2px dashed var(--stitch); opacity: .55; }
+.ach:first-child { border-top: 0; }
+.ach.got { opacity: 1; }
+.ach.got .up-name::before { content: '✓ '; color: #4c8c3a; }
+.ach-gems { flex: none; font-size: 13px; font-weight: 800; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .float { animation-duration: .01s; }

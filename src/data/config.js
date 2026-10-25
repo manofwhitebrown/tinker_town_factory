@@ -1,7 +1,7 @@
 // Global tuning knobs. Change numbers here, not in the logic.
 export const CONFIG = {
   saveKey: 'tinker-town-factory/save',
-  saveVersion: 2,
+  saveVersion: 3,
 
   tickRate: 30,            // fixed simulation steps per second
   maxFrameSeconds: 0.25,   // longest frame we simulate (tab was hidden, etc.)

@@ -2,7 +2,7 @@
 
 A cozy, endless idle factory game. Built as plain HTML5 + JavaScript (Vite), wrapped into an Android APK with Capacitor in Part 8.
 
-**Status: Parts 0-5 of 9 done** (scaffold, engine, economy, automation + offline income, prestige, factory wings).
+**Status: Parts 0-6 of 9 done** (scaffold, engine, economy, automation + offline income, prestige, factory wings, daily rewards / quests / achievements / gems).
 
 ## Run it
 
@@ -26,6 +26,8 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 - Every 10/25/50/100... levels a machine's output doubles.
 - **Managers tab:** once you have earned 1M coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
 - **Wings:** Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa). Each is a bigger tier of the same coin pool.
+- **Rewards tab:** a daily reward on a 7-day streak (miss a day and it resets), three daily quests that change at local midnight, and 22 achievements. They all pay **gems** (◆).
+- **Shop tab:** spend gems on a Coin Crate (1 hour of income), Double Time (2x income for 15 min, pauses while the game is closed), and permanent Gem Polish (+5% income per level) and Bigger Vault (+1h offline time per level).
 - Progress autosaves every 10 seconds and when you leave the page.
 
 ## Project layout
@@ -33,9 +35,9 @@ Add `?debug=1` to the URL (e.g. `http://localhost:5173/?debug=1`) to get cheat b
 ```
 src/
   core/      state.js (state shape + repair), save.js (versioned saves), loop.js (fixed timestep), format.js (1.2K, 3.4M)
-  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js
-  data/      config.js (global knobs), machines.js (wings + every machine's numbers), prestige.js (manager tuning)
-  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, moreView.js, icons.js (SVG), styles.css, dom.js
+  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js, meta.js (daily, quests, achievements, gem shop)
+  data/      config.js (global knobs), machines.js (wings + every machine's numbers), prestige.js (manager tuning), meta.js (rewards, quests, achievements, gem shop)
+  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, rewardsView.js, shopView.js, moreView.js, icons.js (SVG), styles.css, dom.js
   main.js    wires it all together
 tests/       node:test unit tests
 tools/simulate.js   balancing bot: `node tools/simulate.js` prints how long milestones take
@@ -49,6 +51,7 @@ Edit numbers only in `src/data/`:
 
 - `machines.js`: `baseCost`, `baseOutput`, `cycleTime`, `autoCost` per machine, and each wing's `unlockAt`. Price of the next level is `baseCost * 1.15^levelsOwned`.
 - `prestige.js`: manager formula (`divisor`), bonus per manager, and the upgrade shop.
+- `meta.js`: daily reward sizes, quest targets, every achievement, gem shop prices.
 - `config.js`: price growth, milestone levels, offline cap and efficiency, autosave interval.
 
 After changing numbers run `node tools/simulate.js` to see the effect on pacing.
@@ -57,13 +60,13 @@ To add a machine, append an entry to `MACHINES` and add an icon in `src/ui/icons
 
 ## Saves
 
-Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version 2; v1 saves migrate automatically). If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
+Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version 3; v1 and v2 saves migrate automatically). If you change the shape of the state, bump `CONFIG.saveVersion` and add a migration in `src/core/save.js`. Unreadable saves are kept under `<key>.corrupt` rather than deleted.
 
 ## Known limits (by design, for now)
 
 - Numbers are standard JS doubles (max about 1e308). Plenty for this game; the formatter switches to `1e40` style past 1e36.
 - Offline earnings trust the device clock.
-- Daily rewards, quests and achievements arrive in Part 6; sound, settings, tutorial and accessibility options in Part 7.
+- Daily rewards and quests trust the device clock (like offline earnings). Sound, settings, tutorial and accessibility options arrive in Part 7.
 
 ## Roadmap
 
@@ -75,8 +78,8 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version
 | 3 | Automation & offline income | done |
 | 4 | Prestige (managers + upgrade shop) | done |
 | 5 | Factory wings (4 wings, 21 machines) | done |
-| 6 | Daily rewards, quests, achievements, gems | next |
-| 7 | Polish, sound, accessibility | |
+| 6 | Daily rewards, quests, achievements, gems | done |
+| 7 | Polish, sound, accessibility | next |
 | 8 | Android packaging + APK via GitHub Actions | |
 
 ## Pushing to GitHub
@@ -84,7 +87,7 @@ Stored in `localStorage` as `{ v: <version>, data: <state> }` (currently version
 ```bash
 git init
 git add .
-git commit -m "Parts 3-5: automation, offline income, prestige, wings"
+git commit -m "Part 6: daily rewards, quests, achievements, gems"
 git branch -M main
 git remote add origin https://github.com/<you>/tinker-town-factory.git
 git push -u origin main
