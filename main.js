@@ -20,6 +20,7 @@ import {
   advanceTutorial, nextStep, replayTutorial, skipTutorial, tutorialActive, visitTab,
 } from './systems/tutorial.js';
 import { createAudio } from './audio/audio.js';
+import { createNotifier } from './platform/notifications.js';
 import { createUI } from './ui/ui.js';
 import { formatNumber } from './core/format.js';
 
@@ -32,6 +33,7 @@ const game = { state: saves.load() || createInitialState() };
 let sinceSave = 0;
 let sinceWingCheck = 0;
 const goldenTimer = new GoldenTimer();
+const notifier = createNotifier();
 let ui;
 const audio = createAudio(() => game.state.settings);
 
@@ -75,6 +77,8 @@ const actions = {
     if (buyAuto(game.state, id)) {
       saves.save(game.state);
       ui.toast('Automated');
+      // A good moment to ask: the player just set something up that is worth coming back for.
+      if (game.state.settings.reminders) notifier.requestPermission();
       ui.feedback('auto', id);
     }
     checkMeta();
@@ -135,6 +139,7 @@ const actions = {
   setSetting(key, value) {
     if (!(key in TOGGLE_SETTINGS)) return;
     game.state.settings[key] = !!value;
+    if (key === 'reminders' && value) notifier.requestPermission();
     audio.unlock();
     audio.sync();
     saves.save(game.state);
@@ -332,7 +337,9 @@ document.addEventListener('visibilitychange', () => {
   audio.setHidden(document.hidden);
   if (document.hidden) {
     saves.save(game.state);
+    notifier.schedule(game.state);
   } else {
+    notifier.clear();
     settleAway((Date.now() - game.state.lastSaved) / 1000);
     checkMeta();
     saves.save(game.state);
@@ -340,7 +347,8 @@ document.addEventListener('visibilitychange', () => {
     ui.render();
   }
 });
-window.addEventListener('pagehide', () => saves.save(game.state));
+window.addEventListener('pagehide', () => { saves.save(game.state); notifier.schedule(game.state); });
+notifier.clear(); // opening the game drops any reminders that were waiting
 
 loop.start();
 

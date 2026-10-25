@@ -3,6 +3,7 @@ import { formatDuration, formatNumber } from '../core/format.js';
 import { CREDIT } from './guideView.js';
 
 const TOGGLES = [
+  ['reminders', 'Reminders', 'Android app: a nudge when your factory is full or your daily reward is ready. Never at night.'],
   ['hints', 'Best value hint', 'Marks the machine that is the smartest purchase right now.'],
   ['cozy', 'Cozy mode', 'Doubles all income for a relaxed pace. Turn it off for the original challenge.'],
   ['muted', 'Mute all sound', 'Silences sound effects and music.'],

@@ -12,6 +12,7 @@ export const TOGGLE_SETTINGS = {
   largeText: false,
   colorblind: false,
   reduceMotion: false,
+  reminders: true,     // Android notifications: factory full, daily reward
   hints: true,         // "Best value" tag on the smartest purchase
   cozy: true,          // Cozy mode: x2 income (new games start with it on)
 };

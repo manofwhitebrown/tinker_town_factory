@@ -126,6 +126,7 @@ export function createGuideView() {
 
   const settings = topic('Settings and saving', false,
     list([
+      'Reminders (Android app only) send a notification when your factory is full or your daily reward is ready, and a gentle nudge after a few days away. They never arrive between 22:00 and 08:00.',
       'Best value hint puts a gold star on the machine that is the smartest purchase right now (a level, or the Automate upgrade). Follow it if you are not sure what to buy.',
       'Cozy mode doubles all your income for a relaxed pace. It starts on in a new game; switch it off any time for the original challenge.',
       'Mute all sound (also the speaker button in the header), Sound effects, and Music are separate switches.',
