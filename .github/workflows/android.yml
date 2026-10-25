@@ -32,6 +32,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx cap sync android
+      # Files uploaded through the GitHub website lose their "executable" flag, so set it here.
+      - run: chmod +x android/gradlew
       - name: Build debug APK
         working-directory: android
         env:
@@ -89,6 +91,7 @@ jobs:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: echo "$KS" | base64 --decode > "$RUNNER_TEMP/release.keystore"
 
+      - run: chmod +x android/gradlew
       - name: Build signed release APK
         working-directory: android
         env:
