@@ -29,13 +29,17 @@ npm run build      # production build into dist/
 - Tap a machine to run one production cycle; the thread bar fills, then you get coins.
 - Spend coins to level machines up. Pick **x1 / x10 / Max** for how many levels to buy at once.
 - **Automate** a machine (button under its card) and it runs forever by itself.
-- Machines **keep earning while you are away** (up to 8 hours). You get a "Welcome back" summary.
+- Machines **keep earning while you are away** (up to 12 hours). You get a "Welcome back" summary.
 - Every 10/25/50/100... levels (up to 900) a machine's output doubles.
-- **Managers tab:** once you have earned 1M coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
+- **Managers tab:** once you have earned 250K coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
 - **Wings:** 7 of them, 36 machines in total. Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa), Clockwork Tower (40Sx), Sky Dock (8Oc) and Star Observatory (1.7Dc). Each is a bigger tier of the same coin pool.
 - **Guide tab:** a plain-language page explaining every feature (machines, Automate, offline income, wings, managers and their upgrades, rewards, shop, settings, saving). Its numbers are read from `src/data/`, so it stays correct when you rebalance.
-- **Rewards tab:** a daily reward on a 7-day streak (miss a day and it resets), three daily quests that change at local midnight, and 27 achievements. They all pay **gems** (◆).
+- **Rewards tab:** a daily reward on a 7-day streak (a Streak Shield saves it if you miss a day), three daily quests that change at local midnight, and 29 achievements. They all pay **gems** (◆).
+- **Golden Gear:** now and then a golden gear floats across the screen for ~12 seconds. Tap it for 8-25 minutes of income (and sometimes a gem). Tuning: `GOLDEN` in `src/data/meta.js`.
+- **Streak Shield:** saves your daily streak when you miss a day. Everyone starts with 1, you earn one at the end of each 7-day cycle, hold up to 3, and can buy more in the Shop.
+- **Welcome back x2:** the away-earnings popup has a Double button: free once a day, then 2 gems.
 - **Shop tab:** spend gems on a Coin Crate (1 hour of income), Double Time (2x income for 15 min, pauses while the game is closed), and permanent Gem Polish (+5% income per level) and Bigger Vault (+1h offline time per level).
+- **Cozy mode** (Settings): doubles all income. On by default in new games, off for existing saves until you switch it on. Turn it off for the original challenge.
 - **Settings tab** (also holds the password-locked Cheats box and the credit): mute button (also in the header), sound effects, music (all generated in code), Large text, Colorblind-friendly colors, Reduce motion, and Replay tutorial. A short tutorial guides your first minutes.
 - Progress autosaves every 10 seconds and when you leave the page.
 
