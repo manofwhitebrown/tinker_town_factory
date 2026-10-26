@@ -1,6 +1,7 @@
+import { plainState } from './helpers.js';
 import test from 'node:test';
+import { CONFIG } from '../src/data/config.js';
 import assert from 'node:assert/strict';
-import { createInitialState } from '../src/core/state.js';
 import { MACHINE_BY_ID } from '../src/data/machines.js';
 import { buyAuto, updateEconomy, incomePerSecond } from '../src/systems/economy.js';
 import { applyOffline } from '../src/systems/offline.js';
@@ -13,7 +14,7 @@ test('autoCost defaults to 5x base cost', () => {
 });
 
 test('buyAuto charges once and only when affordable and owned', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.coins = 74;
   assert.equal(buyAuto(s, 'sewing'), false);
   s.coins = 100;
@@ -26,7 +27,7 @@ test('buyAuto charges once and only when affordable and owned', () => {
 });
 
 test('an automated machine runs on its own', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.coins = 75;
   buyAuto(s, 'sewing');
   for (let i = 0; i < 100; i++) updateEconomy(s, 0.1); // 10s
@@ -35,7 +36,7 @@ test('an automated machine runs on its own', () => {
 });
 
 test('offline: automated machine earns floor(time / cycle) cycles', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.sewing.auto = true;
   const r = applyOffline(s, 600);
   assert.equal(r.coins, 1000); // 600 / 0.6
@@ -46,7 +47,7 @@ test('offline: automated machine earns floor(time / cycle) cycles', () => {
 });
 
 test('offline: leftover cycle progress is kept (no free or lost time)', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.sewing.auto = true;
   applyOffline(s, 1);                       // 1 full cycle + 0.4s
   assert.equal(s.coins, 1);
@@ -55,32 +56,32 @@ test('offline: leftover cycle progress is kept (no free or lost time)', () => {
 });
 
 test('offline: matches what online play would have produced', () => {
-  const online = createInitialState();
-  const offline = createInitialState();
+  const online = plainState();
+  const offline = plainState();
   for (const s of [online, offline]) { s.machines.loom.level = 4; s.machines.loom.auto = true; s.machines.sewing.level = 7; s.machines.sewing.auto = true; }
   for (let i = 0; i < 6000; i++) updateEconomy(online, 0.1); // 600s
   applyOffline(offline, 600);
   assert.ok(Math.abs(online.coins - offline.coins) / online.coins < 0.01, `${online.coins} vs ${offline.coins}`);
 });
 
-test('offline: capped at 8 hours', () => {
-  const s = createInitialState();
+test('offline: capped at the configured number of hours', () => {
+  const s = plainState();
   s.machines.sewing.auto = true;
   const r = applyOffline(s, 30 * 3600);
   assert.equal(r.capped, true);
-  assert.equal(r.seconds, 8 * 3600);
-  assert.equal(r.coins, Math.floor((8 * 3600) / 0.6));
+  assert.equal(r.seconds, CONFIG.offlineCapSeconds);
+  assert.equal(r.coins, Math.floor(CONFIG.offlineCapSeconds / 0.6));
 });
 
 test('offline: Night Shift raises the cap', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.prestige.upgrades.nightshift = 2; // +4h
   s.machines.sewing.auto = true;
-  assert.equal(applyOffline(s, 30 * 3600).seconds, 12 * 3600);
+  assert.equal(applyOffline(s, 30 * 3600).seconds, CONFIG.offlineCapSeconds + 4 * 3600);
 });
 
 test('offline: tapped (non-auto) machine only finishes its current cycle', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.loom.level = 2;
   s.machines.loom.running = true;
   s.machines.loom.progress = 0.5;
@@ -90,7 +91,7 @@ test('offline: tapped (non-auto) machine only finishes its current cycle', () =>
 });
 
 test('offline: idle machines earn nothing, bad input is safe', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(applyOffline(s, 3600).coins, 0);
   assert.equal(applyOffline(s, -50).seconds, 0);
   assert.equal(applyOffline(s, NaN).seconds, 0);

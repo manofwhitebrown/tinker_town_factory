@@ -17,7 +17,7 @@ npm test           # unit tests (economy, saving, number formatting, game loop)
 npm run build      # production build into dist/
 ```
 
-**Cheats:** open the Settings tab, scroll to the bottom and type the cheat password in the Cheats box. The cheat buttons (add coins, gems, managers, open all wings, automate all, skip time) then appear, and stay unlocked on that device until you press Lock cheats. Only a hash of the password is stored in `src/systems/cheats.js`; to change the password, put the new hash from `hashText('tinker-town:' + yourPassword)` into `CHEAT_HASH`. Adding `?debug=1` to the URL only exposes `window.game` in the console.
+**Cheats:** open the Settings tab, scroll to the bottom and type the cheat password in the Cheats box. The cheat buttons (add coins, gems, managers, open all wings, automate all, skip time) then appear, and stay unlocked on that device until you press Lock cheats. Only a hash of the password is stored in `src/systems/cheats.js`; to change the password, put the new hash from `hashText('tinker-town:' + yourPassword)` into `CHEAT_HASH`. Adding `?debug=1` to the URL only exposes `window.game`, `window.actions` and `window.goldenTimer` in the console.
 
 ## Play it / get the APK
 
@@ -34,8 +34,10 @@ npm run build      # production build into dist/
 - **Managers tab:** once you have earned 250K coins in a run you can reopen the factory. Coins and machines reset, but you hire managers (permanent +10% income each) and can spend them on permanent upgrades.
 - **Wings:** 7 of them, 36 machines in total. Cloth Works, Toy Shop (opens at 5M lifetime coins), Gadget Garage (1T), Candy Kitchen (200Qa), Clockwork Tower (40Sx), Sky Dock (8Oc) and Star Observatory (1.7Dc). Each is a bigger tier of the same coin pool.
 - **Guide tab:** a plain-language page explaining every feature (machines, Automate, offline income, wings, managers and their upgrades, rewards, shop, settings, saving). Its numbers are read from `src/data/`, so it stays correct when you rebalance.
-- **Rewards tab:** a daily reward on a 7-day streak (a Streak Shield saves it if you miss a day), three daily quests that change at local midnight, and 29 achievements. They all pay **gems** (◆).
+- **Rewards tab:** a daily reward on a 7-day streak (a Streak Shield saves it if you miss a day), three daily quests that change at local midnight, and 30 achievements. They all pay **gems** (◆).
 - **Reminders (Android):** local notifications via `@capacitor/local-notifications`: factory full (when the offline cap is reached), daily reward at 10:00, and a nudge after 3 days away. Never between 22:00 and 08:00. Permission is requested right after the player automates their first machine (or turns the setting on). Plan logic: `src/systems/reminders.js`; device code: `src/platform/notifications.js`. Does nothing in a browser.
+- **Lucky Spin:** one free spin a day on the Rewards tab (coins, gems, Double Time, Streak Shield). Prizes and odds: `SPIN` in `src/data/meta.js`.
+- **Tinker Bot:** a helper strip at the top of the Factory that says what to do next (logic: `src/systems/tinkerbot.js`). Tapping it jumps to the right tab.
 - **Best value hint:** a gold star on the smartest purchase right now (logic in `src/systems/advisor.js`). Can be switched off in Settings.
 - **Golden Gear:** now and then a golden gear floats across the screen for ~12 seconds. Tap it for 8-25 minutes of income (and sometimes a gem). Tuning: `GOLDEN` in `src/data/meta.js`.
 - **Streak Shield:** saves your daily streak when you miss a day. Everyone starts with 1, you earn one at the end of each 7-day cycle, hold up to 3, and can buy more in the Shop.

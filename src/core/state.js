@@ -1,7 +1,7 @@
 import { CONFIG } from '../data/config.js';
 import { MACHINES, WINGS } from '../data/machines.js';
 import { UPGRADES, UPGRADES_BY_ID, seedCoins } from '../data/prestige.js';
-import { ACHIEVEMENT_BY_ID, GEM_SHOP, QUEST_TYPES } from '../data/meta.js';
+import { ACHIEVEMENT_BY_ID, GEM_SHOP, QUEST_TYPES, SHIELD } from '../data/meta.js';
 import { TUTORIAL_STEPS } from '../data/tutorial.js';
 
 /** Player preferences that are simple on/off switches. */
@@ -12,6 +12,9 @@ export const TOGGLE_SETTINGS = {
   largeText: false,
   colorblind: false,
   reduceMotion: false,
+  reminders: true,     // Android notifications: factory full, daily reward
+  hints: true,         // "Best value" tag on the smartest purchase
+  cozy: true,          // Cozy mode: x2 income (new games start with it on)
 };
 
 export const BUY_MODES = [1, 10, 'max'];
@@ -39,12 +42,12 @@ export function createInitialState(now = Date.now()) {
     machines: freshMachines(),
     wings,
     prestige: { points: 0, totalPoints: 0, count: 0, upgrades },
-    stats: { taps: 0, playSeconds: 0, offlineCoins: 0, questsDone: 0 },
+    stats: { taps: 0, playSeconds: 0, offlineCoins: 0, questsDone: 0, goldenGears: 0, spins: 0 },
     // Part 6
     gems: 0,
     gemShop: Object.fromEntries(GEM_SHOP.filter((i) => i.kind === 'permanent').map((i) => [i.id, 0])),
     buffs: { boost: 0 },                                  // seconds of Double Time left
-    daily: { lastDay: null, streak: 0, total: 0 },        // lastDay = local day number of last claim
+    daily: { lastDay: null, streak: 0, total: 0, shields: SHIELD.start, doubleDay: null, spinDay: null },        // lastDay = local day number of last claim
     quests: { day: null, list: [], bonusClaimed: false },
     achievements: {},                                     // id -> true
     settings: { buyMode: 1, wing: WINGS[0].id, ...TOGGLE_SETTINGS, tutorialStep: 0 },
@@ -116,6 +119,8 @@ export function hydrate(raw, now = Date.now()) {
   for (const key of Object.keys(TOGGLE_SETTINGS)) {
     if (typeof set[key] === 'boolean') s.settings[key] = set[key];
   }
+  // Cozy mode: brand-new games get it on; existing saves keep their original difficulty until the player opts in.
+  if (typeof set.cozy !== 'boolean') s.settings.cozy = !(s.lifetimeCoins >= 100 || s.stats.taps >= 5);
   // Tutorial: saves from before it existed with real progress skip it.
   const veteran = s.lifetimeCoins >= 100 || s.stats.taps >= 5;
   s.settings.tutorialStep = Number.isFinite(set.tutorialStep)
@@ -123,6 +128,8 @@ export function hydrate(raw, now = Date.now()) {
     : (veteran ? TUTORIAL_STEPS.length : 0);
 
   s.stats.questsDone = Math.floor(num(st.questsDone));
+  s.stats.goldenGears = Math.floor(num(st.goldenGears));
+  s.stats.spins = Math.floor(num(st.spins));
 
   // ---- Part 6 ----
   s.gems = Math.floor(capped(raw.gems, CONFIG.maxGems));
@@ -136,6 +143,9 @@ export function hydrate(raw, now = Date.now()) {
   s.daily.lastDay = Number.isFinite(d.lastDay) ? Math.floor(d.lastDay) : null;
   s.daily.streak = Math.floor(num(d.streak));
   s.daily.total = Math.floor(num(d.total));
+  s.daily.shields = Math.min(Math.floor(num(d.shields, SHIELD.start)), SHIELD.max);
+  s.daily.doubleDay = Number.isFinite(d.doubleDay) ? Math.floor(d.doubleDay) : null;
+  s.daily.spinDay = Number.isFinite(d.spinDay) ? Math.floor(d.spinDay) : null;
 
   const q = raw.quests || {};
   s.quests.day = Number.isFinite(q.day) ? Math.floor(q.day) : null;

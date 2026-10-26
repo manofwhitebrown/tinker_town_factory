@@ -21,6 +21,7 @@ export const SFX = {
     { f: 1480, d: 0.1, t: 'sine', g: 0.16 },
     { f: 1976, at: 0.08, d: 0.2, t: 'sine', g: 0.16 },
   ],
+  golden: [12, 16, 19, 24].map((n, i) => ({ f: hz(n), at: i * 0.06, d: 0.22, t: 'sine', g: 0.16 })),
   achievement: [0, 4, 7, 12, 7, 16].map((n, i) => ({ f: hz(n + 12), at: i * 0.09, d: 0.2, t: 'square', g: 0.09 })),
   prestige: [0, 7, 12, 16, 19, 24].map((n, i) => ({ f: hz(n), at: i * 0.1, d: 0.5, t: 'sine', g: 0.16 })),
   wing: [0, 4, 7].flatMap((n, i) => [

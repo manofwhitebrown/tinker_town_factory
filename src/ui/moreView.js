@@ -1,8 +1,11 @@
-import { h, setText } from './dom.js';
+import { h } from './dom.js';
 import { formatDuration, formatNumber } from '../core/format.js';
 import { CREDIT } from './guideView.js';
 
 const TOGGLES = [
+  ['cozy', 'Cozy mode', 'Doubles all income for a relaxed pace. Turn it off for the original challenge.'],
+  ['hints', 'Tinker Bot and hints', 'A friendly helper that suggests what to do next and marks the best purchase.'],
+  ['reminders', 'Reminders', 'Android app: a nudge when your factory is full or your daily reward is ready. Never at night.'],
   ['muted', 'Mute all sound', 'Silences sound effects and music.'],
   ['sfx', 'Sound effects', 'Taps, purchases and rewards.'],
   ['music', 'Music', 'A soft background tune.'],
@@ -72,7 +75,7 @@ export function createMoreView({ game, actions }) {
 
   const cheatTitle = h('h2', {}, 'Cheats');
   panels.push(h('section', { class: 'panel' }, cheatTitle, lockedBox, openBox));
-  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.6'));
+  panels.push(h('div', { class: 'version' }, 'Tinker Town Factory v0.7'));
   panels.push(h('div', { class: 'credit' }, h('b', {}, 'Tinker Town Factory'), h('span', {}, `A game by ${CREDIT}.`)));
 
   const el = h('div', { class: 'view' }, ...panels);

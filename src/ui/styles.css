@@ -227,6 +227,59 @@ button { font: inherit; color: inherit; }
 }
 .primary:disabled { background: #cdd6e2; color: #6c7a90; cursor: default; }
 .primary:active:not(:disabled) { filter: brightness(1.25); }
+.secondary {
+  display: block; width: 100%; min-height: 46px; margin: 0 0 10px; padding: 0 16px;
+  background: #fff3c4; color: var(--ink); cursor: pointer;
+  border: 2px dashed var(--coin-deep); border-radius: 14px;
+  font-size: calc(15px * var(--fs)); font-weight: 800;
+}
+.secondary:disabled { background: #e6ebf2; color: #6c7a90; border-color: var(--stitch); cursor: default; }
+
+/* ---------- lucky spin ---------- */
+.wheel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.tile {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 58px; padding: 6px 4px; border-radius: 12px;
+  border: 2px dashed var(--stitch); background: #fff;
+  font-size: calc(12px * var(--fs)); font-weight: 800; color: var(--ink);
+}
+.tile.lit { background: var(--coin); border-style: solid; border-color: var(--coin-deep); transform: scale(1.05); }
+html[data-calm] .tile.lit { transform: none; }
+
+/* ---------- tinker bot ---------- */
+.bot {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 10px; padding: 8px 12px;
+  border: 2px dashed var(--stitch); border-radius: 16px; background: var(--card); color: var(--ink);
+  font-size: calc(14px * var(--fs)); font-weight: 700; text-align: left; cursor: default;
+}
+.bot[hidden] { display: none; }
+.bot.go { cursor: pointer; border-color: var(--coin-deep); background: #fff8dc; }
+.bot:disabled { opacity: 1; color: var(--ink); }
+.bot-face { flex: none; width: 34px; height: 34px; color: var(--ink); }
+.bot-text { line-height: 1.3; }
+
+/* ---------- best value hint ---------- */
+.card.tip { box-shadow: 0 0 0 3px var(--coin); }
+.card.tip .name::after {
+  content: '★ Best value'; margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+  background: var(--coin); color: var(--ink); font-size: calc(11px * var(--fs)); font-weight: 800; white-space: nowrap;
+}
+.tip-btn { outline: 3px solid var(--coin); outline-offset: -3px; }
+.chip.tip::after { content: ' ★'; color: var(--coin-deep); }
+
+/* ---------- golden gear ---------- */
+.golden {
+  position: fixed; z-index: 20; width: 68px; height: 68px; padding: 0;
+  border: 0; border-radius: 50%; background: rgba(255, 243, 196, .55); cursor: pointer;
+  box-shadow: 0 0 0 4px rgba(242, 177, 52, .45), 0 6px 18px rgba(31, 42, 68, .35);
+  animation: goldspin 6s linear infinite, goldglow 1.4s ease-in-out infinite;
+}
+.golden[hidden] { display: none; }
+.golden:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+@keyframes goldspin { to { transform: rotate(360deg); } }
+@keyframes goldglow { 50% { box-shadow: 0 0 0 10px rgba(242, 177, 52, .15), 0 6px 18px rgba(31, 42, 68, .35); } }
+html[data-calm] .golden { animation: none; }
+@media (prefers-reduced-motion: reduce) { .golden { animation: none; } }
 
 .up { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 2px dashed var(--stitch); }
 .up:first-of-type { border-top: 0; }

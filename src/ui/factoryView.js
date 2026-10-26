@@ -2,9 +2,12 @@ import { MACHINES, WINGS } from '../data/machines.js';
 import { BUY_MODES } from '../core/state.js';
 import { formatNumber, formatDuration } from '../core/format.js';
 import {
-  cycleTimeOf, isUnlocked, isVisible, machineCost, machineOutput, nextMilestone, resolveBuyCount,
+  cycleTimeOf, incomePerSecond, isUnlocked, isVisible, machineCost, machineOutput, nextMilestone, resolveBuyCount,
 } from '../systems/economy.js';
 import { nextGoal } from '../systems/goals.js';
+import { bestBuy } from '../systems/advisor.js';
+import { botMessage } from '../systems/tinkerbot.js';
+import { tutorialActive } from '../systems/tutorial.js';
 import { ICONS } from './icons.js';
 import { h, setText, setDisabled, setAttr } from './dom.js';
 
@@ -66,11 +69,19 @@ export function createFactoryView({ game, actions }) {
     list.append(c.root);
   });
 
+  const BOT = '<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v6"/><circle cx="24" cy="5" r="2" fill="currentColor"/><rect x="9" y="12" width="30" height="24" rx="8" fill="#fff"/><path d="M15 38v4M33 38v4"/></g><circle cx="18" cy="24" r="3.2" fill="currentColor"/><circle cx="30" cy="24" r="3.2" fill="currentColor"/><path d="M19 30q5 4 10 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+  const botText = h('span', { class: 'bot-text' });
+  let botTab = null;
+  const bot = h('button', {
+    class: 'bot', type: 'button', hidden: true,
+    onclick: () => { if (botTab) actions.goTab(botTab); },
+  }, h('span', { class: 'bot-face', html: BOT }), botText);
+
   const goalText = h('span', { class: 'goal-text' });
   const goalFill = h('i');
   const goal = h('div', { class: 'goal', hidden: true }, goalText, h('div', { class: 'bar' }, goalFill));
 
-  const el = h('div', { class: 'view' }, goal, wingRow, modeRow, list);
+  const el = h('div', { class: 'view' }, bot, goal, wingRow, modeRow, list);
 
   function render() {
     const s = game.state;
@@ -79,7 +90,9 @@ export function createFactoryView({ game, actions }) {
     const g = nextGoal(s);
     goal.hidden = !g;
     if (g) {
-      setText(goalText, `Next goal: ${g.label} (${formatNumber(g.have)} / ${formatNumber(g.need)})`);
+      const ips = incomePerSecond(s);
+      const eta = ips > 0 && g.have < g.need ? ` · about ${formatDuration(Math.max(1, (g.need - g.have) / ips))} at your pace` : '';
+      setText(goalText, `Next goal: ${g.label} (${formatNumber(g.have)} / ${formatNumber(g.need)})${eta}`);
       const w = `${(g.fraction * 100).toFixed(1)}%`;
       if (goalFill._w !== w) { goalFill.style.width = w; goalFill._w = w; }
     }
@@ -91,6 +104,21 @@ export function createFactoryView({ game, actions }) {
       btn.classList.toggle('locked', !open);
       setDisabled(btn, !open);
       setText(sub, open ? '' : `at ${formatNumber(w.unlockAt)} earned`);
+    }
+
+    // "Best value" hint: tag the smartest purchase (and the wing it lives in).
+    const tip = s.settings.hints && !tutorialActive(s) ? bestBuy(s) : null;
+    const tipWing = tip ? MACHINES.find((d) => d.id === tip.id).wing : null;
+    for (const w of WINGS) chips[w.id].btn.classList.toggle('tip', w.id === tipWing && w.id !== wingId);
+
+    // Tinker Bot: one friendly line about what to do next
+    const msg = s.settings.hints && !tutorialActive(s) ? botMessage(s, Date.now(), tip) : null;
+    bot.hidden = !msg;
+    if (msg) {
+      botTab = msg.tab;
+      setText(botText, msg.text);
+      bot.classList.toggle('go', !!msg.tab);
+      bot.disabled = !msg.tab;
     }
 
     for (const mode of BUY_MODES) {
@@ -116,13 +144,17 @@ export function createFactoryView({ game, actions }) {
         setDisabled(c.tap, true);
         c.buy.hidden = true;
         c.autobar.hidden = true;
-        c.root.classList.remove('auto');
+        c.root.classList.remove('auto', 'tip');
         return;
       }
 
       c.buy.hidden = false;
       if (c.icon._k !== def.icon) { c.icon.innerHTML = ICONS[def.icon] || ''; c.icon._k = def.icon; }
 
+      const isTip = !!tip && tip.id === def.id;
+      c.root.classList.toggle('tip', isTip);
+      c.buy.classList.toggle('tip-btn', isTip && tip.kind === 'level');
+      c.autobar.classList.toggle('tip-btn', isTip && tip.kind === 'auto');
       const owned = m.level >= 1;
       const auto = m.auto;
       const ct = cycleTimeOf(def, s);

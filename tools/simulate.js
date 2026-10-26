@@ -39,7 +39,7 @@ function bestPurchase(state) {
 }
 
 function playRun(state, { maxSeconds = 3 * 24 * 3600, stopAtRunCoins = Infinity, label = '' } = {}) {
-  const marks = [[1e3, '1K'], [1e6, '1M (first manager)'], [5e6, '5M (toys wing)'], [1e8, '100M'], [1e10, '10B'],
+  const marks = [[1e3, '1K'], [2.5e5, '250K (first manager)'], [1e6, '1M'], [5e6, '5M (toys wing)'], [1e8, '100M'], [1e10, '10B'],
     [1e12, '1T (gadgets wing)'], [1e15, '1Qa'], [2e17, '200Qa (candy wing)'], [1e20, '100Qi+']];
   let mi = 0, t = 0, autoAt = null;
   const lines = [];

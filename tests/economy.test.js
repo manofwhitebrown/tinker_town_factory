@@ -1,6 +1,7 @@
+import { plainState } from './helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInitialState } from '../src/core/state.js';
+import { CONFIG } from '../src/data/config.js';
 import { MACHINE_BY_ID, MACHINES } from '../src/data/machines.js';
 import {
   machineCost, maxAffordable, machineOutput, milestoneMultiplier, nextMilestone,
@@ -10,16 +11,16 @@ import {
 const sewing = MACHINE_BY_ID.sewing;
 const loom = MACHINE_BY_ID.loom;
 
-test('single level cost scales by 1.15 per level owned', () => {
+test('single level cost scales by the cost growth per level owned', () => {
   assert.equal(machineCost(loom, 0), 120);
-  assert.equal(machineCost(loom, 1), Math.ceil(120 * 1.15));
-  assert.equal(machineCost(loom, 10), Math.ceil(120 * 1.15 ** 10));
+  assert.equal(machineCost(loom, 1), Math.ceil(120 * CONFIG.costGrowth));
+  assert.equal(machineCost(loom, 10), Math.ceil(120 * CONFIG.costGrowth ** 10));
 });
 
 test('bulk cost equals summing single purchases (within rounding)', () => {
   for (const owned of [0, 1, 5, 40]) {
     let sum = 0;
-    for (let i = 0; i < 10; i++) sum += loom.baseCost * 1.15 ** (owned + i);
+    for (let i = 0; i < 10; i++) sum += loom.baseCost * CONFIG.costGrowth ** (owned + i);
     assert.ok(Math.abs(machineCost(loom, owned, 10) - sum) <= 1);
   }
 });
@@ -46,7 +47,7 @@ test('milestones double output', () => {
 });
 
 test('unlock chain and visibility', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(isUnlocked(s, 'sewing'), true);
   assert.equal(isUnlocked(s, 'loom'), true); // sewing owned
   assert.equal(isUnlocked(s, 'dyevat'), false);
@@ -58,7 +59,7 @@ test('unlock chain and visibility', () => {
 });
 
 test('buy x1, x10, max and refusals', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.coins = 100;
   assert.deepEqual(buyMachine(s, 'loom', 1), { bought: 0, spent: 0 }); // 120 > 100
   s.coins = 130;
@@ -80,7 +81,7 @@ test('buy x1, x10, max and refusals', () => {
 });
 
 test('x10 is all-or-nothing', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.coins = machineCost(sewing, 1, 10) - 1;
   assert.equal(resolveBuyCount(s, sewing, 10), 0);
   s.coins += 1;
@@ -88,13 +89,13 @@ test('x10 is all-or-nothing', () => {
 });
 
 test('cannot buy a locked machine', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.coins = 1e12;
   assert.equal(buyMachine(s, 'dyevat', 1).bought, 0);
 });
 
 test('tap runs one cycle then stops', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(startCycle(s, 'sewing'), true);
   assert.equal(startCycle(s, 'sewing'), false); // already running
   const produced = [];
@@ -110,12 +111,12 @@ test('tap runs one cycle then stops', () => {
 });
 
 test('cannot tap a machine you do not own', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(startCycle(s, 'loom'), false);
 });
 
 test('auto machines keep cycling (hook for Part 3)', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.sewing.auto = true;
   for (let i = 0; i < 300; i++) updateEconomy(s, 0.1); // 30s
   assert.ok(Math.abs(s.coins - 50) <= 1, `coins ${s.coins}`); // 30 / 0.6
@@ -123,14 +124,14 @@ test('auto machines keep cycling (hook for Part 3)', () => {
 });
 
 test('a long step finishes several cycles at once', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.sewing.auto = true;
   updateEconomy(s, 6.1);
   assert.equal(s.coins, 10);
 });
 
 test('lifetime coins track earnings but not spending', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.machines.sewing.auto = true;
   updateEconomy(s, 60);
   const earned = s.lifetimeCoins;

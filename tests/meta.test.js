@@ -6,11 +6,10 @@ import { applyOffline } from '../src/systems/offline.js';
 import { getGlobalMultiplier, offlineCapSeconds, buyAuto, updateEconomy, addCoins } from '../src/systems/economy.js';
 import {
   buyGemItem, checkAchievements, claimDaily, claimQuest, dailyStatus, dayNumber, gemItemCost,
-  makeQuests, refreshQuests, track,
+  doubleAway, doubleAwayStatus, makeQuests, refreshQuests, track,
 } from '../src/systems/meta.js';
 import { DAILY, QUEST_BONUS_GEMS } from '../src/data/meta.js';
 
-const DAY = 86400000;
 const noon = (n) => new Date(2026, 0, 1 + n, 12).getTime(); // local noon, n days after Jan 1
 
 test('daily reward: first claim, then locked until the next local day', () => {
@@ -26,6 +25,7 @@ test('daily reward: first claim, then locked until the next local day', () => {
 
 test('daily streak grows on consecutive days and resets after a miss', () => {
   const s = createInitialState();
+  s.daily.shields = 0;
   claimDaily(s, noon(0));
   claimDaily(s, noon(1));
   assert.equal(claimDaily(s, noon(2)).streak, 3);
@@ -176,4 +176,127 @@ test('hydrate repairs garbage meta data', () => {
   assert.equal(s.daily.lastDay, null);
   assert.equal(s.quests.list.length, 1);
   assert.equal(s.quests.list[0].progress, 10);
+});
+
+// ---- Streak Shield ----
+test('streak shield: a missed day is forgiven and one shield is spent', () => {
+  const s = createInitialState();
+  assert.equal(s.daily.shields, 1);
+  claimDaily(s, noon(0));
+  claimDaily(s, noon(1));
+  const st = dailyStatus(s, noon(3)); // skipped day 2
+  assert.equal(st.shieldsUsed, 1);
+  assert.equal(st.streak, 3);
+  const r = claimDaily(s, noon(3));
+  assert.equal(r.streak, 3);
+  assert.equal(r.shieldsUsed, 1);
+  assert.equal(s.daily.shields, 0);
+});
+
+test('streak shield: not enough shields means the streak still resets', () => {
+  const s = createInitialState();
+  claimDaily(s, noon(0));
+  claimDaily(s, noon(1));
+  assert.equal(claimDaily(s, noon(5)).streak, 1); // 3 days missed, only 1 shield
+  assert.equal(s.daily.shields, 1);               // nothing was spent
+});
+
+test('streak shield: finishing day 7 earns one (max 3), shop sells them', () => {
+  const s = createInitialState();
+  s.daily.shields = 0;
+  let last;
+  for (let i = 0; i < 7; i++) last = claimDaily(s, noon(i));
+  assert.equal(last.shieldEarned, true);
+  assert.equal(s.daily.shields, 1);
+  s.gems = 100;
+  assert.equal(buyGemItem(s, 'shield'), true);
+  assert.equal(buyGemItem(s, 'shield'), true);
+  assert.equal(s.daily.shields, 3);
+  assert.equal(gemItemCost(s, 'shield'), null); // full
+  assert.equal(buyGemItem(s, 'shield'), false);
+});
+
+test('old saves without shields get the starting shield and stay valid', () => {
+  const s = hydrate({ daily: { lastDay: 5, streak: 2, total: 2 } });
+  assert.equal(s.daily.shields, 1);
+  assert.equal(hydrate({ daily: { shields: 99 } }).daily.shields, 3);
+});
+
+// ---- Welcome back: double ----
+test('double away earnings: free once a day, then costs gems', () => {
+  const s = createInitialState();
+  const c0 = s.coins;
+  assert.equal(doubleAwayStatus(s, noon(0)).free, true);
+  assert.deepEqual(doubleAway(s, 1000, noon(0)), { coins: 1000, free: true });
+  assert.equal(s.coins, c0 + 1000);
+  assert.equal(doubleAwayStatus(s, noon(0)).free, false);
+  assert.equal(doubleAway(s, 1000, noon(0)), null); // no gems
+  s.gems = 5;
+  assert.equal(doubleAway(s, 1000, noon(0)).free, false);
+  assert.equal(s.gems, 3);
+  assert.equal(doubleAwayStatus(s, noon(1)).free, true); // new day
+  assert.equal(doubleAway(s, 0, noon(1)), null);
+});
+
+// ---- Lucky Spin ----
+import { pickSpin, spinStatus, spinWheel } from '../src/systems/meta.js';
+import { SPIN } from '../src/data/meta.js';
+
+test('lucky spin: weighted pick covers every tile and respects weights', () => {
+  assert.equal(pickSpin(() => 0), 0);
+  assert.equal(pickSpin(() => 0.999999), SPIN.segments.length - 1);
+  const hits = new Array(SPIN.segments.length).fill(0);
+  for (let i = 0; i < 20000; i++) hits[pickSpin(() => (i + 0.5) / 20000)]++;
+  assert.ok(hits.every((n) => n > 0));
+  assert.ok(hits[0] > hits[hits.length - 1]); // common tile beats the rare one
+});
+
+test('lucky spin: once a day, pays out, counts, clock moved back cannot respin', () => {
+  const s = createInitialState();
+  s.gems = 0;
+  const gemTile = SPIN.segments.findIndex((x) => x.kind === 'gems' && x.gems === 3);
+  const total = SPIN.segments.reduce((n, x) => n + x.weight, 0);
+  const before = SPIN.segments.slice(0, gemTile).reduce((n, x) => n + x.weight, 0);
+  const rand = () => (before + 0.5) / total;
+  assert.equal(spinStatus(s, noon(5)).available, true);
+  const r = spinWheel(s, rand, noon(5));
+  assert.equal(r.index, gemTile);
+  assert.equal(s.gems, 3);
+  assert.equal(s.stats.spins, 1);
+  assert.equal(spinStatus(s, noon(5)).available, false);
+  assert.equal(spinWheel(s, rand, noon(5)), null);
+  assert.equal(spinStatus(s, noon(4)).available, false); // clock moved back
+  assert.equal(spinStatus(s, noon(6)).available, true);
+});
+
+test('lucky spin: coin tile scales with income, boost tile is capped, full shields become gems', () => {
+  const s = createInitialState();
+  s.machines.sewing.auto = true;
+  const pick = (kind, extra = {}) => {
+    const idx = SPIN.segments.findIndex((x) => x.kind === kind && Object.entries(extra).every(([k, v]) => x[k] === v));
+    const total = SPIN.segments.reduce((n, x) => n + x.weight, 0);
+    const before = SPIN.segments.slice(0, idx).reduce((n, x) => n + x.weight, 0);
+    return () => (before + 0.5) / total;
+  };
+  s.daily.spinDay = null;
+  const c = spinWheel(s, pick('coins', { minutes: 90 }), noon(1));
+  assert.ok(c.coins >= DAILY.minCoins);
+  s.daily.spinDay = null; s.buffs.boost = 3500;
+  const b = spinWheel(s, pick('boost'), noon(2));
+  assert.equal(s.buffs.boost, 3600);
+  assert.equal(b.boostSeconds, 100);
+  s.daily.spinDay = null; s.daily.shields = 3; s.gems = 0;
+  const sh = spinWheel(s, pick('shield'), noon(3));
+  assert.equal(sh.shield, false);
+  assert.equal(s.gems, SPIN.shieldFullGems);
+  s.daily.spinDay = null; s.daily.shields = 1;
+  assert.equal(spinWheel(s, pick('shield'), noon(4)).shield, true);
+  assert.equal(s.daily.shields, 2);
+});
+
+test('welcome-back double: a clock moved back does not give another free one', () => {
+  const s = createInitialState();
+  s.daily.doubleDay = dayNumber(noon(5));
+  assert.equal(doubleAwayStatus(s, noon(4)).free, false);
+  assert.equal(doubleAwayStatus(s, noon(6)).free, true);
 });

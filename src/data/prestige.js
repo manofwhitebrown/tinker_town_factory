@@ -1,7 +1,7 @@
 // Prestige ("hire managers") tuning. Part 4.
 
 export const PRESTIGE = {
-  divisor: 1e6,          // managers gained = floor(sqrt(coinsEarnedThisRun / divisor))
+  divisor: 2.5e5,         // managers gained = floor(sqrt(coinsEarnedThisRun / divisor))
   bonusPerPoint: 0.1,    // every manager ever hired: +10% income (spending them never lowers this)
 };
 

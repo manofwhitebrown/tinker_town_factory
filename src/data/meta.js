@@ -16,15 +16,50 @@ export const DAILY = {
   ],
 };
 
+// ---- Streak Shield: saves your streak when you miss a day (one shield per missed day) ----
+export const SHIELD = {
+  max: 3,        // most you can hold
+  start: 1,      // everyone begins with one
+};
+
+// ---- Golden Gear: a gear that floats across the screen now and then. Tap it for a bonus. ----
+export const GOLDEN = {
+  minWait: 90,        // seconds between gears (random between min and max)
+  maxWait: 210,
+  life: 12,           // seconds it stays on screen
+  minMinutes: 8,      // reward = this many minutes of your income (random between min and max)
+  maxMinutes: 25,
+  gemChance: 0.1,     // chance of +1 gem as well
+  minCoins: 300,
+};
+
+// ---- Lucky Spin: one free spin a day. A weighted pick; higher weight = more likely. ----
+export const SPIN = {
+  segments: [
+    { id: 'c10', kind: 'coins', minutes: 10, weight: 26 },
+    { id: 'g1', kind: 'gems', gems: 1, weight: 22 },
+    { id: 'c30', kind: 'coins', minutes: 30, weight: 16 },
+    { id: 'boost', kind: 'boost', seconds: 600, weight: 12 },
+    { id: 'g3', kind: 'gems', gems: 3, weight: 10 },
+    { id: 'c90', kind: 'coins', minutes: 90, weight: 7 },
+    { id: 'shield', kind: 'shield', weight: 5 },
+    { id: 'g10', kind: 'gems', gems: 10, weight: 2 },
+  ],
+  shieldFullGems: 2,   // if your shields are already full, the shield tile pays this many gems instead
+};
+
+// ---- Welcome back: double your away earnings. Free once a day, then costs gems. ----
+export const WELCOME_DOUBLE = { gemCost: 2 };
+
 // ---- Daily quests ----
 export const QUEST_COUNT = 3;
 export const QUEST_BONUS_GEMS = 2; // for claiming all of them
 
 // `targets` are picked at random per day. `earn` targets are computed from your income.
 export const QUEST_TYPES = {
-  taps: { targets: [30, 60, 100], gems: 1, label: (n) => `Tap machines ${n} times` },
-  levels: { targets: [10, 20, 40], gems: 1, label: (n) => `Buy ${n} machine levels` },
-  cycles: { targets: [50, 120, 250], gems: 1, label: (n) => `Finish ${n} production cycles` },
+  taps: { targets: [20, 40, 70], gems: 1, label: (n) => `Tap machines ${n} times` },
+  levels: { targets: [8, 15, 30], gems: 1, label: (n) => `Buy ${n} machine levels` },
+  cycles: { targets: [30, 80, 160], gems: 1, label: (n) => `Finish ${n} production cycles` },
   earn: { gems: 2, label: (n, fmt) => `Earn ${fmt(n)} coins` },
 };
 export const EARN_QUEST = { minCoins: 1000, potentialSeconds: 120 };
@@ -60,6 +95,9 @@ export const ACHIEVEMENTS = [
   { id: 'streak3', name: 'Regular', desc: 'Reach a 3-day login streak.', gems: 1, check: (s) => s.daily.streak >= 3 },
   { id: 'streak7', name: 'Dedicated', desc: 'Reach a 7-day login streak.', gems: 3, check: (s) => s.daily.streak >= 7 },
   { id: 'quests10', name: 'Odd Jobs', desc: 'Finish 10 daily quests.', gems: 3, check: (s) => s.stats.questsDone >= 10 },
+  { id: 'golden1', name: 'Lucky Find', desc: 'Catch a Golden Gear.', gems: 1, check: (s) => s.stats.goldenGears >= 1 },
+  { id: 'golden25', name: 'Golden Touch', desc: 'Catch 25 Golden Gears.', gems: 4, check: (s) => s.stats.goldenGears >= 25 },
+  { id: 'spin1', name: 'Lucky Day', desc: 'Spin the Lucky Wheel.', gems: 1, check: (s) => s.stats.spins >= 1 },
   { id: 'hour1', name: 'Settling In', desc: 'Play for 1 hour.', gems: 2, check: (s) => s.stats.playSeconds >= 3600 },
 ];
 
@@ -76,6 +114,10 @@ export const GEM_SHOP = [
   {
     id: 'boost', kind: 'consume', name: 'Double Time', cost: 5, seconds: 900, maxSeconds: 3600,
     describe: () => 'Doubles all income for 15 minutes. Pauses while the game is closed.',
+  },
+  {
+    id: 'shield', kind: 'consume', name: 'Streak Shield', cost: 6,
+    describe: () => 'Saves your daily streak if you miss a day. You can hold up to 3.',
   },
   {
     id: 'polish', kind: 'permanent', name: 'Gem Polish', max: 10, baseCost: 10, growth: 1.6, perLevel: 0.05,

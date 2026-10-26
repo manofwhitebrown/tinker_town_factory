@@ -1,5 +1,6 @@
 import {
-  ACHIEVEMENTS, DAILY, EARN_QUEST, GEM_SHOP_BY_ID, QUEST_BONUS_GEMS, QUEST_COUNT, QUEST_TYPES,
+  ACHIEVEMENTS, DAILY, EARN_QUEST, GEM_SHOP_BY_ID, QUEST_BONUS_GEMS, QUEST_COUNT, QUEST_TYPES, SHIELD,
+  SPIN, WELCOME_DOUBLE,
 } from '../data/meta.js';
 import {
   addCoins, gemShopLevel, incomePerSecond, potentialIncomePerSecond,
@@ -26,6 +27,7 @@ export function addGems(state, n) {
  *  claimable: can claim today
  *  streak:    the streak you will have after claiming (or have, if already claimed)
  *  clockBehind: true when claiming is locked because the device date is earlier than the last claim
+ *  shieldsUsed: Streak Shields that claiming now would spend to save the streak
  */
 export function dailyStatus(state, now = Date.now()) {
   const today = dayNumber(now);
@@ -34,8 +36,11 @@ export function dailyStatus(state, now = Date.now()) {
   // `clockBehind`: the last claim is dated in the future (device clock was wrong or moved back).
   // Claiming stays locked on purpose (it stops clock tricks), but the UI can now say why.
   if (last !== null && last >= today) return { claimable: false, streak: d.streak, today, clockBehind: last > today };
-  const continues = last !== null && last === today - 1;
-  return { claimable: true, streak: continues ? d.streak + 1 : 1, today };
+  const missed = last === null ? 0 : today - last - 1; // whole days skipped
+  const shields = d.shields || 0;
+  const saved = last !== null && d.streak > 0 && missed >= 1 && missed <= shields;
+  const continues = last !== null && (missed === 0 || saved);
+  return { claimable: true, streak: continues ? d.streak + 1 : 1, today, shieldsUsed: saved ? missed : 0 };
 }
 
 /** Which of the 7 reward slots a streak value lands on (0-based). */
@@ -57,7 +62,83 @@ export function claimDaily(state, now = Date.now()) {
   state.daily.lastDay = st.today;
   state.daily.streak = st.streak;
   state.daily.total += 1;
-  return { ...reward, streak: st.streak };
+  state.daily.shields = Math.max(0, (state.daily.shields || 0) - st.shieldsUsed);
+  // Finishing the last day of the cycle earns a Streak Shield.
+  let shieldEarned = false;
+  if (rewardSlot(st.streak) === DAILY.rewards.length - 1 && state.daily.shields < SHIELD.max) {
+    state.daily.shields += 1;
+    shieldEarned = true;
+  }
+  return { ...reward, streak: st.streak, shieldsUsed: st.shieldsUsed, shieldEarned };
+}
+
+// ---------------------------------------------------------------- welcome back: double it
+
+/** Can the player double their away earnings right now, and what does it cost? */
+export function doubleAwayStatus(state, now = Date.now()) {
+  const dd = state.daily.doubleDay;
+  const free = dd === null || dd < dayNumber(now); // a clock moved backwards does not give a free one
+  const cost = free ? 0 : WELCOME_DOUBLE.gemCost;
+  return { free, cost, affordable: free || state.gems >= cost };
+}
+
+/** Pay out the away coins a second time. Returns { coins, free } or null if not allowed. */
+export function doubleAway(state, coins, now = Date.now()) {
+  if (!(coins > 0)) return null;
+  const st = doubleAwayStatus(state, now);
+  if (!st.affordable) return null;
+  if (st.free) state.daily.doubleDay = dayNumber(now);
+  else state.gems -= st.cost;
+  addCoins(state, coins);
+  state.stats.offlineCoins += coins;
+  return { coins, free: st.free };
+}
+
+// ---------------------------------------------------------------- lucky spin
+
+export function spinStatus(state, now = Date.now()) {
+  const sd = state.daily.spinDay;
+  return { available: sd === null || sd < dayNumber(now) };
+}
+
+/** Weighted random pick. Returns an index into SPIN.segments. */
+export function pickSpin(rand = Math.random) {
+  const total = SPIN.segments.reduce((n, s) => n + s.weight, 0);
+  let r = rand() * total;
+  for (let i = 0; i < SPIN.segments.length; i++) {
+    r -= SPIN.segments[i].weight;
+    if (r < 0) return i;
+  }
+  return SPIN.segments.length - 1;
+}
+
+/** Take the daily spin and pay the prize. Returns { index, coins, gems, boostSeconds, shield } or null. */
+export function spinWheel(state, rand = Math.random, now = Date.now()) {
+  if (!spinStatus(state, now).available) return null;
+  const index = pickSpin(rand);
+  const seg = SPIN.segments[index];
+  const out = { index, coins: 0, gems: 0, boostSeconds: 0, shield: false };
+  if (seg.kind === 'coins') {
+    out.coins = Math.max(DAILY.minCoins, Math.ceil(potentialIncomePerSecond(state) * 60 * seg.minutes));
+    addCoins(state, out.coins);
+  } else if (seg.kind === 'gems') {
+    out.gems = addGems(state, seg.gems);
+  } else if (seg.kind === 'boost') {
+    const max = GEM_SHOP_BY_ID.boost.maxSeconds;
+    const before = state.buffs.boost;
+    state.buffs.boost = Math.min(max, before + seg.seconds);
+    out.boostSeconds = state.buffs.boost - before;
+  } else if (seg.kind === 'shield') {
+    if ((state.daily.shields || 0) < SHIELD.max) {
+      state.daily.shields = (state.daily.shields || 0) + 1;
+      out.shield = true;
+    } else {
+      out.gems = addGems(state, SPIN.shieldFullGems);
+    }
+  }
+  state.daily.spinDay = dayNumber(now);
+  state.stats.spins += 1;
+  return out;
 }
 
 // ---------------------------------------------------------------- quests
@@ -157,6 +238,7 @@ export function gemItemCost(state, id) {
   if (!item) return null;
   if (item.kind === 'consume') {
     if (id === 'boost' && state.buffs.boost + item.seconds > item.maxSeconds) return null; // would waste gems
+    if (id === 'shield' && (state.daily.shields || 0) >= SHIELD.max) return null;
     return item.cost;
   }
   const lvl = gemShopLevel(state, id);
@@ -174,6 +256,8 @@ export function buyGemItem(state, id) {
     addCoins(state, Math.max(DAILY.minCoins, Math.ceil(base * 3600 * item.hours)));
   } else if (id === 'boost') {
     state.buffs.boost += item.seconds;
+  } else if (id === 'shield') {
+    state.daily.shields = (state.daily.shields || 0) + 1;
   } else {
     state.gemShop[id] = gemShopLevel(state, id) + 1;
   }

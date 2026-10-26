@@ -7,18 +7,20 @@ import {
   addCoins, buyAuto, buyMachine, offlineCapSeconds, startCycle, updateEconomy,
 } from './systems/economy.js';
 import { applyOffline } from './systems/offline.js';
+import { GoldenTimer, collectGolden } from './systems/golden.js';
 import { buyUpgrade, doPrestige, pendingPoints } from './systems/prestige.js';
 import { checkWingUnlocks } from './systems/wings.js';
 import { createCheatLock } from './systems/cheats.js';
 import { MACHINES, WINGS } from './data/machines.js';
 import {
-  buyGemItem, checkAchievements, claimDaily, claimQuest, refreshQuests, track,
+  buyGemItem, checkAchievements, claimDaily, claimQuest, doubleAway, refreshQuests, spinWheel, track,
 } from './systems/meta.js';
 import { GEM_SHOP_BY_ID } from './data/meta.js';
 import {
-  advanceTutorial, nextStep, replayTutorial, skipTutorial, visitTab,
+  advanceTutorial, nextStep, replayTutorial, skipTutorial, tutorialActive, visitTab,
 } from './systems/tutorial.js';
 import { createAudio } from './audio/audio.js';
+import { createNotifier } from './platform/notifications.js';
 import { createUI } from './ui/ui.js';
 import { formatNumber } from './core/format.js';
 
@@ -30,6 +32,8 @@ const debug = new URLSearchParams(location.search).has('debug');
 const game = { state: saves.load() || createInitialState() };
 let sinceSave = 0;
 let sinceWingCheck = 0;
+const goldenTimer = new GoldenTimer();
+const notifier = createNotifier();
 let ui;
 const audio = createAudio(() => game.state.settings);
 
@@ -73,6 +77,8 @@ const actions = {
     if (buyAuto(game.state, id)) {
       saves.save(game.state);
       ui.toast('Automated');
+      // A good moment to ask: the player just set something up that is worth coming back for.
+      if (game.state.settings.reminders) notifier.requestPermission();
       ui.feedback('auto', id);
     }
     checkMeta();
@@ -84,9 +90,49 @@ const actions = {
       saves.save(game.state);
       ui.feedback('claim');
       ui.toast(`Day ${r.streak}: +${formatNumber(r.coins)} coins${r.gems ? ` and ${gemWord(r.gems)}` : ''}`);
+      if (r.shieldsUsed) ui.toast(`Streak saved! Used ${r.shieldsUsed} Streak ${r.shieldsUsed === 1 ? 'Shield' : 'Shields'}`);
+      if (r.shieldEarned) ui.toast('You earned a Streak Shield');
+      if (game.state.settings.reminders) notifier.requestPermission();
     }
     checkMeta();
     ui.render();
+  },
+  /** Lucky Spin: returns the result so the Rewards tab can animate it. */
+  spin() {
+    const r = spinWheel(game.state);
+    if (!r) return null;
+    saves.save(game.state);
+    ui.feedback('gem');
+    checkMeta();
+    ui.render();
+    return r;
+  },
+  goTab(id) {
+    ui.goTab(id);
+  },
+  collectGolden() {
+    if (!goldenTimer.active) return;
+    const r = collectGolden(game.state);
+    goldenTimer.collect();
+    ui.hideGolden();
+    saves.save(game.state);
+    ui.feedback('golden');
+    ui.toast(`Golden Gear: +${formatNumber(r.coins)} coins${r.gems ? ` and ${gemWord(r.gems)}` : ''}`);
+    checkMeta();
+    ui.render();
+  },
+  /** Welcome-back dialog: pay the away coins a second time. Once per dialog. */
+  doubleAway(away) {
+    if (!away || away.doubled) return null;
+    const r = doubleAway(game.state, away.coins);
+    if (!r) { ui.toast('Not enough gems'); return null; }
+    away.doubled = true;
+    saves.save(game.state);
+    ui.feedback('claim');
+    ui.toast(r.free ? 'Doubled! (free today)' : 'Doubled!');
+    checkMeta();
+    ui.render();
+    return r;
   },
   claimQuest(i) {
     const gems = claimQuest(game.state, i);
@@ -107,6 +153,7 @@ const actions = {
   setSetting(key, value) {
     if (!(key in TOGGLE_SETTINGS)) return;
     game.state.settings[key] = !!value;
+    if (key === 'reminders' && value) notifier.requestPermission();
     audio.unlock();
     audio.sync();
     saves.save(game.state);
@@ -178,6 +225,7 @@ const actions = {
       game.state = saves.importString(code);
       saves.save(game.state);
       refreshQuests(game.state);
+      goldenTimer.reset();
       ui.rebuild();
       ui.toast('Save loaded');
     } catch (err) {
@@ -189,6 +237,7 @@ const actions = {
     saves.wipe();
     game.state = createInitialState();
     refreshQuests(game.state);
+    goldenTimer.reset();
     ui.rebuild();
     ui.toast('Fresh start');
   },
@@ -277,6 +326,10 @@ const loop = new Loop({
     track(game.state, 'earn', game.state.lifetimeCoins - before);
     game.state.stats.playSeconds += dt;
 
+    const goldenEvent = goldenTimer.tick(dt, !tutorialActive(game.state));
+    if (goldenEvent === 'spawn') ui.showGolden();
+    else if (goldenEvent === 'expire') ui.hideGolden();
+
     sinceWingCheck += dt;
     if (sinceWingCheck >= 0.5) {
       sinceWingCheck = 0;
@@ -298,7 +351,9 @@ document.addEventListener('visibilitychange', () => {
   audio.setHidden(document.hidden);
   if (document.hidden) {
     saves.save(game.state);
+    notifier.schedule(game.state);
   } else {
+    notifier.clear();
     settleAway((Date.now() - game.state.lastSaved) / 1000);
     checkMeta();
     saves.save(game.state);
@@ -306,8 +361,14 @@ document.addEventListener('visibilitychange', () => {
     ui.render();
   }
 });
-window.addEventListener('pagehide', () => saves.save(game.state));
+window.addEventListener('pagehide', () => { saves.save(game.state); notifier.schedule(game.state); });
+notifier.clear(); // opening the game drops any reminders that were waiting
 
 loop.start();
 
-if (debug) window.game = game; // poke at state from the console: game.state (cheat buttons need the password)
+if (debug) {
+  // poke at things from the console: game.state, actions, goldenTimer (cheat buttons still need the password)
+  window.game = game;
+  window.actions = actions;
+  window.goldenTimer = goldenTimer;
+}

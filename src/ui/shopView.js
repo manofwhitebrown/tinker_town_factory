@@ -1,4 +1,4 @@
-import { GEM_SHOP } from '../data/meta.js';
+import { GEM_SHOP, SHIELD } from '../data/meta.js';
 import { formatDuration } from '../core/format.js';
 import { gemShopLevel } from '../systems/economy.js';
 import { gemItemCost } from '../systems/meta.js';
@@ -41,7 +41,7 @@ export function createShopView({ game, actions }) {
         setText(r.btn, cost === null ? 'Maxed' : `${cost} ◆`);
       } else {
         const left = item.id === 'boost' ? s.buffs.boost : 0;
-        setText(r.lvl, left > 0 ? `${formatDuration(left)} left` : '');
+        setText(r.lvl, item.id === 'shield' ? `${s.daily.shields || 0}/${SHIELD.max} held` : left > 0 ? `${formatDuration(left)} left` : '');
         setText(r.desc, item.describe());
         setText(r.btn, cost === null ? 'Full' : `${cost} ◆`);
       }

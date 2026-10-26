@@ -13,13 +13,14 @@ export function gemShopLevel(state, id) {
   return (state.gemShop && state.gemShop[id]) || 0;
 }
 
-/** Everything that multiplies income: managers, Golden Thimble, Gem Polish, Double Time. */
+/** Everything that multiplies income: managers, Golden Thimble, Gem Polish, Double Time, Cozy mode. */
 export function getGlobalMultiplier(state) {
   const managers = 1 + PRESTIGE.bonusPerPoint * state.prestige.totalPoints;
   const thimble = 1 + UPGRADES_BY_ID.thimble.perLevel * upgradeLevel(state, 'thimble');
   const polish = 1 + GEM_SHOP_BY_ID.polish.perLevel * gemShopLevel(state, 'polish');
   const boost = state.buffs && state.buffs.boost > 0 ? 2 : 1;
-  return managers * thimble * polish * boost;
+  const cozy = state.settings && state.settings.cozy ? CONFIG.cozyMultiplier : 1;
+  return managers * thimble * polish * boost * cozy;
 }
 
 /** Speedy Spools: machines finish cycles faster. */

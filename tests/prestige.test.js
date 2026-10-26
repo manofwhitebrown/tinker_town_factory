@@ -1,25 +1,27 @@
+import { plainState } from './helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInitialState } from '../src/core/state.js';
 import { addCoins, getGlobalMultiplier, speedMultiplier, machineOutput, cycleTimeOf } from '../src/systems/economy.js';
 import { MACHINE_BY_ID } from '../src/data/machines.js';
+import { PRESTIGE } from '../src/data/prestige.js';
 import {
   pendingPoints, coinsForNextPoint, canPrestige, doPrestige, upgradeCost, buyUpgrade,
 } from '../src/systems/prestige.js';
 
 test('manager points grow with the square root of run earnings', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(pendingPoints(s), 0);
   assert.equal(canPrestige(s), false);
-  s.runCoins = 1e6; assert.equal(pendingPoints(s), 1);
-  s.runCoins = 4e6; assert.equal(pendingPoints(s), 2);
-  s.runCoins = 1e8; assert.equal(pendingPoints(s), 10);
-  s.runCoins = 1e12; assert.equal(pendingPoints(s), 1000);
-  assert.equal(coinsForNextPoint(s), 1001 ** 2 * 1e6);
+  const D = PRESTIGE.divisor;
+  s.runCoins = D; assert.equal(pendingPoints(s), 1);
+  s.runCoins = 4 * D; assert.equal(pendingPoints(s), 2);
+  s.runCoins = 100 * D; assert.equal(pendingPoints(s), 10);
+  s.runCoins = 1e6 * D; assert.equal(pendingPoints(s), 1000);
+  assert.equal(coinsForNextPoint(s), 1001 ** 2 * D);
 });
 
 test('addCoins tracks run and lifetime separately from spending', () => {
-  const s = createInitialState();
+  const s = plainState();
   addCoins(s, 500);
   s.coins -= 200;
   assert.equal(s.runCoins, 500);
@@ -27,15 +29,15 @@ test('addCoins tracks run and lifetime separately from spending', () => {
 });
 
 test('prestige is refused until at least one point is available', () => {
-  const s = createInitialState();
-  s.runCoins = 999999;
+  const s = plainState();
+  s.runCoins = PRESTIGE.divisor - 1;
   assert.equal(doPrestige(s), 0);
   assert.equal(s.prestige.count, 0);
 });
 
 test('prestige resets the run but keeps the permanent stuff', () => {
-  const s = createInitialState();
-  s.coins = 123; s.runCoins = 9e6; s.lifetimeCoins = 2e7;
+  const s = plainState();
+  s.coins = 123; s.runCoins = 9 * PRESTIGE.divisor; s.lifetimeCoins = 2e7;
   s.machines.sewing.level = 40; s.machines.sewing.auto = true; s.machines.loom.level = 5;
   s.wings.toys = true;
   s.prestige.upgrades.thimble = 2;
@@ -55,17 +57,17 @@ test('prestige resets the run but keeps the permanent stuff', () => {
 });
 
 test('second run is faster: managers multiply income', () => {
-  const s = createInitialState();
+  const s = plainState();
   const before = machineOutput(MACHINE_BY_ID.sewing, 10, s);
-  s.runCoins = 1e8; s.lifetimeCoins = 1e8;
+  s.runCoins = 100 * PRESTIGE.divisor; s.lifetimeCoins = 100 * PRESTIGE.divisor;
   doPrestige(s); // 10 managers -> +100%
   assert.equal(getGlobalMultiplier(s), 2);
   assert.equal(machineOutput(MACHINE_BY_ID.sewing, 10, s), before * 2);
 });
 
 test('spending managers never lowers the bonus', () => {
-  const s = createInitialState();
-  s.runCoins = 1e8; s.lifetimeCoins = 1e8;
+  const s = plainState();
+  s.runCoins = 100 * PRESTIGE.divisor; s.lifetimeCoins = 100 * PRESTIGE.divisor;
   doPrestige(s);
   const mult = getGlobalMultiplier(s);
   assert.equal(buyUpgrade(s, 'seed'), true);
@@ -73,7 +75,7 @@ test('spending managers never lowers the bonus', () => {
 });
 
 test('upgrade costs, max levels and affordability', () => {
-  const s = createInitialState();
+  const s = plainState();
   assert.equal(upgradeCost(s, 'thimble'), 3);
   assert.equal(buyUpgrade(s, 'thimble'), false); // no points
   s.prestige.points = 100;
@@ -87,7 +89,7 @@ test('upgrade costs, max levels and affordability', () => {
 });
 
 test('Golden Thimble, Speedy Spools and Seed Money take effect', () => {
-  const s = createInitialState();
+  const s = plainState();
   s.prestige.upgrades.thimble = 4;   // +100%
   assert.equal(getGlobalMultiplier(s), 2);
   s.prestige.upgrades.spools = 5;    // +50% speed
@@ -95,7 +97,7 @@ test('Golden Thimble, Speedy Spools and Seed Money take effect', () => {
   assert.ok(Math.abs(cycleTimeOf(MACHINE_BY_ID.sewing, s) - 0.4) < 1e-9);
 
   s.prestige.upgrades.seed = 3;      // 500 * 5^2
-  s.runCoins = 1e6; s.lifetimeCoins = 1e6;
+  s.runCoins = PRESTIGE.divisor; s.lifetimeCoins = PRESTIGE.divisor;
   doPrestige(s);
   assert.equal(s.coins, 12500);
 });

@@ -1,6 +1,6 @@
-import { ACHIEVEMENTS, DAILY, QUEST_BONUS_GEMS, QUEST_TYPES } from '../data/meta.js';
+import { ACHIEVEMENTS, DAILY, QUEST_BONUS_GEMS, QUEST_TYPES, SHIELD, SPIN } from '../data/meta.js';
 import { formatNumber } from '../core/format.js';
-import { dailyReward, dailyStatus, questDone, rewardSlot } from '../systems/meta.js';
+import { dailyReward, dailyStatus, questDone, rewardSlot, spinStatus } from '../systems/meta.js';
 import { h, setText, setDisabled, setAttr } from './dom.js';
 
 const gemText = (n) => `${n} ${n === 1 ? 'gem' : 'gems'}`;
@@ -17,9 +17,58 @@ export function createRewardsView({ game, actions }) {
   const claim = h('button', { class: 'primary', type: 'button', onclick: () => actions.claimDaily() }, 'Claim');
   const dailyPanel = h('section', { class: 'panel' },
     h('h2', {}, 'Daily reward'),
-    h('p', { class: 'lede' }, 'Come back every day to keep your streak going. Miss a day and it starts over.'),
+    h('p', { class: 'lede' }, 'Come back every day to keep your streak going. A Streak Shield saves it if you miss a day. Finish day 7 to earn another one.'),
     h('div', { class: 'days' }, ...days.map((d) => d.cell)),
     streakLine, claim);
+
+  // ---- lucky spin ----
+  const tileText = (seg) => (seg.kind === 'coins' ? `${seg.minutes}m of coins`
+    : seg.kind === 'gems' ? `${seg.gems} ◆`
+      : seg.kind === 'boost' ? `2x for ${Math.round(seg.seconds / 60)}m`
+        : 'Streak Shield');
+  const tiles = SPIN.segments.map((seg) => h('div', { class: 'tile' }, tileText(seg)));
+  const spinResult = h('p', { class: 'hint-line' });
+  let spinning = false;
+  const spinBtn = h('button', {
+    class: 'primary', type: 'button',
+    onclick: () => {
+      if (spinning) return;
+      const r = actions.spin();
+      if (!r) return;
+      spinning = true;
+      animateSpin(r.index, () => {
+        spinning = false;
+        spinResult.textContent = spinSummary(r);
+        render();
+      });
+    },
+  }, 'Spin');
+  const spinPanel = h('section', { class: 'panel' },
+    h('h2', {}, 'Lucky spin'),
+    h('p', { class: 'lede' }, 'One free spin every day. Coins, gems, Double Time or a Streak Shield.'),
+    h('div', { class: 'wheel' }, ...tiles), spinBtn, spinResult);
+
+  function spinSummary(r) {
+    const bits = [];
+    if (r.coins) bits.push(`${formatNumber(r.coins)} coins`);
+    if (r.gems) bits.push(gemText(r.gems));
+    if (r.boostSeconds) bits.push(`${Math.round(r.boostSeconds / 60)} minutes of Double Time`);
+    if (r.shield) bits.push('a Streak Shield');
+    return `You won ${bits.join(' and ')}!`;
+  }
+  function light(i) { tiles.forEach((t, k) => t.classList.toggle('lit', k === i)); }
+  function animateSpin(target, done) {
+    if (game.state.settings.reduceMotion) { light(target); done(); return; }
+    const total = 16 + target;
+    let i = 0;
+    const step = () => {
+      light(i % tiles.length);
+      if (i >= total) { done(); return; }
+      i += 1;
+      setTimeout(step, 40 + i * i * 0.35);
+    };
+    step();
+  }
 
   // ---- quests ----
   const questRows = Array.from({ length: 3 }, (_, i) => {
@@ -52,7 +101,7 @@ export function createRewardsView({ game, actions }) {
   }
   const achPanel = h('section', { class: 'panel' }, achTitle, achList);
 
-  const el = h('div', { class: 'view' }, dailyPanel, questPanel, achPanel);
+  const el = h('div', { class: 'view' }, dailyPanel, spinPanel, questPanel, achPanel);
 
   function render() {
     const s = game.state;
@@ -76,9 +125,18 @@ export function createRewardsView({ game, actions }) {
       ? `Claim ${formatNumber(reward.coins)} coins${reward.gems ? ` + ${gemText(reward.gems)}` : ''}`
       : st.clockBehind ? 'Your device date is behind your last claim' : 'Claimed today, come back tomorrow');
     setDisabled(claim, !st.claimable);
-    setText(streakLine, st.claimable && st.streak === 1 && s.daily.streak > 0
-      ? 'Your streak was broken. Claim to start a new one.'
-      : `Streak: ${st.claimable ? st.streak - 1 : st.streak} ${(st.claimable ? st.streak - 1 : st.streak) === 1 ? 'day' : 'days'}`);
+    const shown_streak = st.claimable ? st.streak - 1 : st.streak;
+    const shieldText = `Shields: ${s.daily.shields || 0}/${SHIELD.max}`;
+    setText(streakLine, st.claimable && st.shieldsUsed > 0
+      ? `You missed ${st.shieldsUsed === 1 ? 'a day' : `${st.shieldsUsed} days`}. Claim now and ${st.shieldsUsed === 1 ? 'a Streak Shield' : `${st.shieldsUsed} Streak Shields`} will save your streak. ${shieldText}`
+      : st.claimable && st.streak === 1 && s.daily.streak > 0
+        ? `Your streak was broken. Claim to start a new one. ${shieldText}`
+        : `Streak: ${shown_streak} ${shown_streak === 1 ? 'day' : 'days'}. ${shieldText}`);
+
+    // lucky spin
+    const sp = spinStatus(s, now);
+    setText(spinBtn, spinning ? 'Spinning…' : sp.available ? 'Spin' : 'Spun today, come back tomorrow');
+    setDisabled(spinBtn, spinning || !sp.available);
 
     // quests
     const list = s.quests.list;

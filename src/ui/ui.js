@@ -1,12 +1,13 @@
-import { WING_BY_ID, MACHINE_BY_ID } from '../data/machines.js';
+import { WING_BY_ID } from '../data/machines.js';
 import { TUTORIAL_STEPS } from '../data/tutorial.js';
 import { formatNumber, formatDuration } from '../core/format.js';
 import { incomePerSecond } from '../systems/economy.js';
 import { canPrestige } from '../systems/prestige.js';
-import { claimableQuests, dailyStatus } from '../systems/meta.js';
+import { claimableQuests, dailyStatus, doubleAwayStatus, spinStatus } from '../systems/meta.js';
 import { currentStep, tutorialActive } from '../systems/tutorial.js';
 import { h, setText, setAttr } from './dom.js';
 import { createFx } from './fx.js';
+import { createGoldenGear } from './goldenGear.js';
 import { createFactoryView } from './factoryView.js';
 import { createGuideView } from './guideView.js';
 import { createManagersView } from './managersView.js';
@@ -35,7 +36,7 @@ const calmOS = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced
  */
 export function createUI(root, game, actions, { debug = false, audio = null } = {}) {
   let tab = 'factory';
-  let app, coinsEl, gemsEl, rateEl, muteBtn, coach, coachText, coachNext, views, navBtns, managersDot, rewardsDot;
+  let golden, app, coinsEl, gemsEl, rateEl, muteBtn, coach, coachText, coachNext, views, navBtns, managersDot, rewardsDot;
   let wingShown = '';
   let settingsKey = '';
   const fx = createFx(document.body, () => !game.state.settings.reduceMotion && !calmOS());
@@ -107,7 +108,8 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
     }
 
     app = h('main', { class: 'app' }, top, content, nav);
-    root.append(app);
+    golden = createGoldenGear(() => actions.collectGolden());
+    root.append(app, golden.el);
     wingShown = '';
     settingsKey = '';
     muteBtn._k = '';
@@ -162,7 +164,7 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
     for (const t of TABS) setAttr(navBtns[t.id], 'aria-current', t.id === tab ? 'page' : 'false');
     managersDot.hidden = !canPrestige(s);
     setText(gemsEl, `${s.gems} ◆`);
-    rewardsDot.hidden = !(dailyStatus(s).claimable || claimableQuests(s) > 0);
+    rewardsDot.hidden = !(dailyStatus(s).claimable || claimableQuests(s) > 0 || spinStatus(s).available);
 
     // tutorial banner + pulsing target
     const step = tutorialActive(s) ? currentStep(s) : null;
@@ -203,6 +205,8 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
         play('gem'); break;
       case 'achievement':
         play('achievement'); fx.confetti(60); break;
+      case 'golden':
+        play('golden'); fx.confetti(50); break;
       case 'prestige':
         play('prestige'); fx.confetti(110); break;
       case 'wing':
@@ -229,15 +233,27 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
     if (existing) existing.remove();
     const close = () => modal.remove();
     const btn = h('button', { class: 'primary', type: 'button', onclick: close }, 'Nice');
+    const big = h('div', { class: 'big' }, `+${formatNumber(away.coins)}`);
+    const dbl = doubleAwayStatus(game.state);
+    const doubleBtn = h('button', {
+      class: 'secondary', type: 'button',
+      onclick: () => {
+        if (!actions.doubleAway(away)) return;
+        setText(big, `+${formatNumber(away.coins * 2)}`);
+        setText(doubleBtn, 'Doubled!');
+        doubleBtn.disabled = true;
+      },
+    }, dbl.free ? 'Double it (free today)' : `Double it for ${dbl.cost} ◆`);
+    doubleBtn.disabled = !dbl.affordable;
     const modal = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'wb-title' },
       h('div', { class: 'modal-card' },
         h('h2', { id: 'wb-title' }, 'Welcome back'),
         h('p', {}, `You were away for ${formatDuration(away.rawSeconds)}.`),
-        h('div', { class: 'big' }, `+${formatNumber(away.coins)}`),
+        big,
         h('p', { class: 'lede' }, away.capped
           ? `Your machines work for up to ${formatDuration(capSeconds)} while you are away.`
           : 'Your automated machines kept working while you were gone.'),
-        btn));
+        doubleBtn, btn));
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     root.append(modal);
     btn.focus();
@@ -247,6 +263,9 @@ export function createUI(root, game, actions, { debug = false, audio = null } = 
   render();
   return {
     render, onProduce, toast, showWelcome, feedback,
+    goTab: (id) => { if (views[id]) select(id); },
+    showGolden: () => golden && golden.show(),
+    hideGolden: () => golden && golden.hide(),
     rebuild: () => { build(); render(); },
     get tab() { return tab; },
   };

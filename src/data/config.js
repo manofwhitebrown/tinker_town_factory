@@ -7,14 +7,17 @@ export const CONFIG = {
   maxFrameSeconds: 0.25,   // longest frame we simulate (tab was hidden, etc.)
   autosaveSeconds: 10,
 
-  costGrowth: 1.15,        // default price growth per level owned
+  costGrowth: 1.13,        // default price growth per level owned (gentler = smoother early game)
 
   // Owning this many levels of a machine multiplies its output.
   milestones: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900],
   milestoneMultiplier: 2,
 
+  // Cozy mode (Settings): an optional, switch-off-able income boost. On by default for new players.
+  cozyMultiplier: 2,
+
   // Offline earnings (Part 3)
-  offlineCapSeconds: 8 * 3600,   // machines work this long while you're away (Night Shift adds more)
+  offlineCapSeconds: 12 * 3600,   // machines work this long while you're away (Night Shift adds more)
   offlineEfficiency: 1,          // 1 = same speed as playing, 0.5 = half
   offlinePopupMinSeconds: 30,    // show "welcome back" only after this much time away
 

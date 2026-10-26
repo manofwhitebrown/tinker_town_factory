@@ -104,14 +104,20 @@ export function createGuideView() {
 
   const rewards = topic('Rewards: daily gift, quests, achievements', false,
     h('p', { class: 'strong' }, 'Daily reward'),
-    p(`Claim once a day. Keep your streak and the prize grows over ${DAILY.rewards.length} days (it includes gems on days ${DAILY.rewards.map((r, i) => (r.gems ? i + 1 : 0)).filter(Boolean).join(', ')}), then loops. Miss a day and the streak starts over. The coins are minutes of your own income, so they stay worth claiming at any stage.`),
+    p(`Claim once a day. Keep your streak and the prize grows over ${DAILY.rewards.length} days (it includes gems on days ${DAILY.rewards.map((r, i) => (r.gems ? i + 1 : 0)).filter(Boolean).join(', ')}), then loops. Miss a day and a Streak Shield saves your streak (one shield per missed day; you start with one, can hold up to 3, and earn another when you finish day 7). With no shield, the streak starts over. The coins are minutes of your own income, so they stay worth claiming at any stage.`),
     h('p', { class: 'strong' }, 'Daily quests'),
     p(`${QUEST_COUNT} quests every day, like tapping, buying levels, finishing cycles or earning coins. Each pays gems. Finish all of them for ${gemText(QUEST_BONUS_GEMS)} extra. New quests arrive at your local midnight, and anything finished but not collected is paid out for you.`),
+    h('p', { class: 'strong' }, 'Lucky Spin'),
+    p('One free spin a day on the Rewards tab. It can land on coins, gems, Double Time or a Streak Shield.'),
+    h('p', { class: 'strong' }, 'Golden Gear'),
+    p('Every minute or two a golden gear floats onto the screen for a few seconds. Tap it fast for a big bonus of coins, and sometimes a gem. It only appears while the game is open.'),
+    h('p', { class: 'strong' }, 'Welcome back'),
+    p('When you return after being away you can double what your machines earned. The first double each day is free; after that it costs gems.'),
     h('p', { class: 'strong' }, 'Achievements'),
     p(`${ACHIEVEMENTS.length} goals to unlock, each paying gems once, the moment you reach it. A dot on the Rewards tab means something is ready to claim.`));
 
   const shop = topic('Shop and gems', false,
-    p('Gems come from the daily reward, quests and achievements. Spend them here.'),
+    p('Gems come from the daily reward, quests, achievements and now and then a Golden Gear. Spend them here.'),
     ...GEM_SHOP.map((i) => {
       const price = i.kind === 'consume'
         ? `${gemText(i.cost)} each`
@@ -122,6 +128,10 @@ export function createGuideView() {
 
   const settings = topic('Settings and saving', false,
     list([
+      'Reminders (Android app only) send a notification when your factory is full or your daily reward is ready, and a gentle nudge after a few days away. They never arrive between 22:00 and 08:00.',
+      'Tinker Bot is the little helper at the top of the Factory. It tells you what to do next (claim a reward, automate a machine, hire managers). Tap it when it glows to jump there. Switching off Tinker Bot and hints hides it and the gold star.',
+      'Best value hint puts a gold star on the machine that is the smartest purchase right now (a level, or the Automate upgrade). Follow it if you are not sure what to buy.',
+      'Cozy mode doubles all your income for a relaxed pace. It starts on in a new game; switch it off any time for the original challenge.',
       'Mute all sound (also the speaker button in the header), Sound effects, and Music are separate switches.',
       'Large text makes words and numbers bigger.',
       'Colorblind-friendly uses safer machine colors and a plain background.',

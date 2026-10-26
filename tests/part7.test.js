@@ -172,3 +172,16 @@ test('music plan is deterministic and always in a sensible range', () => {
   assert.ok(notes > 400);
   assert.ok(STEP_SECONDS > 0.5 && STEP_SECONDS < 1.2);
 });
+
+// ---- cozy mode ----
+import { getGlobalMultiplier as _gm } from '../src/systems/economy.js';
+test('cozy mode: on for new games, doubles income, off for existing saves until opted in', () => {
+  const fresh = createInitialState();
+  assert.equal(fresh.settings.cozy, true);
+  const plain = createInitialState(); plain.settings.cozy = false;
+  assert.equal(_gm(fresh), _gm(plain) * 2);
+  const veteran = hydrate({ lifetimeCoins: 5000, stats: { taps: 50 }, settings: {} });
+  assert.equal(veteran.settings.cozy, false);
+  const opted = hydrate({ lifetimeCoins: 5000, settings: { cozy: true } });
+  assert.equal(opted.settings.cozy, true);
+});
