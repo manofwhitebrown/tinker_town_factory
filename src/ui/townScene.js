@@ -88,6 +88,8 @@ export function createTownScene({ onPick }) {
     const g = target.closest && target.closest('[data-wing]');
     if (g && !g.classList.contains('locked')) onPick(g.dataset.wing);
   };
+  // Stop a tap from leaving a focus box on the building (keyboard users still get one via Tab).
+  el.addEventListener('mousedown', (e) => e.preventDefault());
   el.addEventListener('click', (e) => pick(e.target));
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e.target); }

@@ -243,6 +243,9 @@ button { font: inherit; color: inherit; }
 }
 .town[data-phase='dusk'] { --sky1: #f08f6b; --sky2: #fbd9a8; --win: #ffd27a; --ground: #6f9a6a; }
 .town[data-phase='night'] { --sky1: #1b2447; --sky2: #3a4678; --win: #ffd96b; --ground: #3f5a4a; --b2: #1b2447; }
+/* No browser tap box, focus box or text selection when tapping buildings */
+.town, .town * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.town .bld { touch-action: manipulation; outline: none; }
 .town svg { display: block; width: 100%; height: auto; }
 .town .ground { fill: var(--ground); }
 .town .sun { fill: #ffd34d; }
@@ -261,7 +264,7 @@ button { font: inherit; color: inherit; }
 .town .bld.locked { opacity: .22; filter: grayscale(1); cursor: default; }
 .town .bld:focus-visible { outline: none; }
 .town .bld:focus-visible .body { stroke: var(--coin-deep); stroke-width: 3; }
-.town .bld:not(.locked):hover .body { filter: brightness(1.12); }
+@media (hover: hover) { .town .bld:not(.locked):hover .body { filter: brightness(1.12); } }
 .town .puff { fill: #fff; opacity: 0; }
 .town .bld.busy .puff { animation: puff 3.3s ease-out infinite; }
 .town .balloon { animation: bob 3.2s ease-in-out infinite; }
