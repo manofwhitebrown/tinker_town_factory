@@ -107,6 +107,10 @@ npm run android:icons           # writes android/app/src/main/res/...
 Your own art: `assets/icon-only.png` (1024), `icon-foreground.png` + `icon-background.png` (1024, adaptive icon,
 keep the picture in the middle 60%), `splash.png` and `splash-dark.png` (2732).
 
+## Reminders (notifications)
+
+The app can send local notifications (factory full, daily reward, a nudge after 3 days away). They come from the `@capacitor/local-notifications` plugin, so there is nothing to set up: `npx cap sync android` (run by CI) wires it in. On Android 13 and newer the player is asked for permission right after automating their first machine. To test on a phone: automate a machine, press Home, and wait. Reminders never fire between 22:00 and 08:00, so to test sooner you can temporarily lower `REMINDERS.comebackDays` and `quietFrom`/`quietTo` in `src/systems/reminders.js`.
+
 ## Notes
 
 - Screen edges: the game uses `viewport-fit=cover` and Capacitor's `SystemBars` plugin (`insetsHandling: native`),

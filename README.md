@@ -53,14 +53,15 @@ npm run build      # production build into dist/
 ```
 src/
   core/      state.js (state shape + repair), save.js (versioned saves), loop.js (fixed timestep), format.js (1.2K, 3.4M)
-  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js, meta.js (daily, quests, achievements, gem shop), cheats.js (password lock)
-  data/      config.js (global knobs), machines.js (wings + every machine's numbers), prestige.js (manager tuning), meta.js (rewards, quests, achievements, gem shop)
-  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, rewardsView.js, shopView.js, guideView.js, moreView.js, icons.js (SVG), styles.css, dom.js
+  systems/   economy.js (costs, buying, automation), offline.js (away earnings), prestige.js (managers + shop), wings.js, meta.js (daily, quests, achievements, gem shop, streak shields, lucky spin, welcome-back double), golden.js (Golden Gear timer + reward), advisor.js (best-value pick), tinkerbot.js (helper messages), reminders.js (notification plan), townclock.js (day/night + busy wings), cheats.js (password lock)
+  data/      config.js (global knobs, incl. Cozy mode), machines.js (wings + every machine's numbers), prestige.js (manager tuning), meta.js (rewards, quests, achievements, gem shop, SHIELD / GOLDEN / SPIN / WELCOME_DOUBLE tuning)
+  ui/        ui.js (shell, tabs, dialogs), factoryView.js, managersView.js, rewardsView.js, shopView.js, guideView.js, moreView.js, townScene.js (the living town), goldenGear.js, icons.js (SVG), styles.css, dom.js
+  platform/  notifications.js (Android reminders; does nothing in a browser)
   main.js    wires it all together
 tests/       node:test unit tests
 tools/simulate.js   balancing bot: `node tools/simulate.js` prints how long milestones take
 public/     favicon (svg, png, ico) and apple-touch icon
-capacitor.config.json   stub, used in Part 8
+capacitor.config.json   Android app settings (splash, status bar, notification icon)
 .github/workflows/ci.yml   runs tests + build on every push
 ```
 
